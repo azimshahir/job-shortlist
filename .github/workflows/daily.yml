@@ -2,14 +2,15 @@ name: Daily job shortlist
 
 on:
   schedule:
-    # 00:00 UTC = 08:00 Malaysia time (MYT is UTC+8, no daylight saving)
-    - cron: "0 0 * * *"
+    # 00:11 UTC = 08:11 Malaysia time. Deliberately off the top of the hour:
+    # GitHub's scheduler queues heavily at :00 and delays those runs most.
+    - cron: "11 0 * * *"
   workflow_dispatch: {}   # lets you run it by hand from the Actions tab
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -19,21 +20,57 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      # The embedding model (~470MB) is downloaded once and reused, so most
+      # runs skip the download entirely.
+      - name: Cache Hugging Face model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ hashFiles('config.py') }}
+          restore-keys: hf-
 
-      - name: Run scraper and send email
+      - name: Install dependencies
+        # CPU-only torch: the default wheel pulls ~2GB of CUDA we never use.
+        run: |
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu \
+            -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python test_filters.py
+          python test_pipeline.py
+
+      - name: Run pipeline and send email
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
-        run: python scraper.py
+          # Optional -- leave unset and the pipeline skips JD analysis and
+          # resume generation gracefully. Never commit these values.
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python pipeline.py
 
-      - name: Upload raw results
+      - name: Upload stage CSVs
         if: always()   # still upload even if the email step failed
         uses: actions/upload-artifact@v4
         with:
-          name: raw-jobs-${{ github.run_number }}
-          path: raw_jobs.csv
+          name: stages-${{ github.run_number }}
+          path: |
+            raw_jobs.csv
+            filtered_jobs.csv
+            ranked_jobs.csv
+            final_jobs.csv
           if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload tailored resumes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resumes-${{ github.run_number }}
+          path: resumes/*.docx
+          if-no-files-found: ignore   # none generated until an LLM is configured
           retention-days: 14

@@ -1,0 +1,170 @@
+# Candidate profile -- drives BOTH semantic ranking and (later) resume tailoring.
+#
+# HOW IT IS USED
+#   Each entry under `sections` is embedded separately. A job is scored against
+#   every section, and the best few are aggregated (see SEMANTIC_TOP_K_SECTIONS
+#   in config.py). This is deliberate: ranking against one giant CV blob washes
+#   out the strong signals.
+#
+# ACCURACY CONTRACT
+#   Nothing in this file may overstate experience. The `must_not_claim` list at
+#   the bottom is enforced in code (test_pipeline.py asserts it) and is passed
+#   verbatim to the strong LLM as a hard constraint on resume generation.
+#
+# >>> ITEMS MARKED TODO_ ARE PLACEHOLDERS. Claude did not have your CV and has
+# >>> deliberately NOT invented employers, dates, or metrics. Fill these in
+# >>> before generating any resume. Semantic ranking works fine without them.
+
+meta:
+  name: Azim Shahir
+  years_experience: 5
+  industry: Malaysian banking and financial services
+  location_preference: Kuala Lumpur / Selangor, Malaysia
+  salary_preference: TODO_SALARY_EXPECTATION   # optional; unused while JobSpy returns no salary data
+  work_arrangement: onsite or hybrid
+
+# --------------------------------------------------------------------------
+# Sections embedded for semantic matching. Write them as natural prose --
+# the embedding model reads meaning, not keywords. Keep each one focused on a
+# single competency; that is what makes `strongest_profile_match` useful.
+# --------------------------------------------------------------------------
+sections:
+
+  fund_accounting_operations: >
+    Fund accounting and fund administration within a Malaysian banking and
+    asset servicing environment. Daily fund valuation support, contributing
+    inputs to daily NAV production on SS&C platforms, pricing and
+    corporate actions inputs, unit trust fund servicing, and review of fund
+    level accounting records prepared for downstream reporting.
+
+  reconciliation: >
+    Daily and periodic reconciliation of cash and securities positions between
+    internal fund records, custodian statements and counterparty records.
+    Investigating and clearing reconciliation breaks, escalating ageing items,
+    and coordinating with custodians, trustees and operations teams to resolve
+    discrepancies within agreed service levels.
+
+  investment_operations: >
+    Investment operations and middle office support covering trade lifecycle
+    monitoring, trade capture verification, settlement processing and
+    settlement failure follow-up, corporate actions event processing, custody
+    and trustee liaison, and transfer agency support for unit trust products.
+
+  treasury_alm: >
+    Asset and liability management and treasury operations support in a bank.
+    Preparing and analysing balance sheet and liquidity positions, supporting
+    ALCO reporting packs and papers, fund transfer pricing analysis, liquidity
+    risk metrics and regulatory liquidity submissions to Bank Negara Malaysia.
+
+  enterprise_risk_governance: >
+    Enterprise risk management at executive level, supporting the risk
+    governance framework, risk registers, risk appetite reporting and
+    management committee and board risk reporting. Secretariat support for
+    governance forums, tracking of risk issues and actions, and regulatory
+    reporting coordination with Bank Negara Malaysia requirements.
+
+  financial_operations: >
+    Broader financial operations in banking, including operational controls
+    over daily processing, exception handling, cash management and payment
+    operations support, service level monitoring, and preparation of
+    operational management information for review by senior stakeholders.
+
+  process_improvement: >
+    Reviewing existing operational finance workflows to identify inefficiency,
+    manual effort and control weakness, then implementing practical
+    improvements. Business analysis activities including requirements
+    gathering with operations and technology stakeholders, user acceptance
+    testing coordination, and supporting change management through process and
+    system transitions.
+
+  ai_automation_in_finance: >
+    Applying automation and AI tooling to finance and operations work.
+    Building automations and reporting with Microsoft Power Automate, Power BI
+    and Excel VBA to remove repetitive manual steps. Practical use of
+    generative AI assistants including Microsoft Copilot, and prompt
+    engineering for finance and operations use cases.
+
+  copilot_training_facilitation: >
+    Microsoft Copilot Training Facilitator. Delivering structured training
+    sessions to colleagues on effective and responsible use of Microsoft
+    Copilot in day to day finance and operations work, including practical
+    prompting technique, appropriate use cases, and organisational adoption.
+
+  stakeholder_management: >
+    Working across operations, finance, risk, technology, custodians,
+    trustees, auditors and regulators. Preparing analysis and papers for
+    management and committee audiences, explaining operational and risk
+    matters to non specialist stakeholders, and coordinating issue resolution
+    across departments.
+
+  islamic_finance: >
+    Exposure to Islamic finance and Shariah compliant products within a
+    Malaysian financial institution, including Shariah governance
+    considerations applied to operational and risk processes.
+
+# --------------------------------------------------------------------------
+# Systems and tools -- only list genuine working familiarity.
+# --------------------------------------------------------------------------
+tools:
+  confident:
+    - Microsoft Excel including VBA
+    - Microsoft Power BI
+    - Microsoft Power Automate
+    - Microsoft Copilot
+    - SS&C fund platform (as a user, contributing NAV production inputs)
+  exposure_only:
+    - Bloomberg
+  # Explicitly NOT claimed -- see must_not_claim below.
+
+# --------------------------------------------------------------------------
+# Experience history -- REQUIRED for resume generation, NOT used for ranking.
+# Claude has left these as placeholders rather than inventing them.
+# --------------------------------------------------------------------------
+experience:
+  - employer: Agrobank
+    title: Executive, Enterprise Risk Management   # confirmed: title is Executive
+    dates: TODO_DATES
+    bullets:
+      - TODO_BULLET  # keep quantified metrics; do not weaken them when tailoring
+  - employer: TODO_EMPLOYER
+    title: TODO_TITLE
+    dates: TODO_DATES
+    bullets:
+      - TODO_BULLET
+
+education:
+  - qualification: TODO_QUALIFICATION
+    institution: TODO_INSTITUTION
+    year: TODO_YEAR
+
+certifications:
+  - Microsoft Copilot Training Facilitator   # must always appear on the resume
+
+# --------------------------------------------------------------------------
+# HARD ACCURACY CONSTRAINTS
+# Enforced by tests and passed to the strong LLM as non-negotiable rules.
+# --------------------------------------------------------------------------
+must_not_claim:
+  - NAV calculation ownership
+  - formal ERM stress testing UAT
+  - formal first-line control ownership
+  - bookkeeping
+  - invoicing
+  - KPI dashboard ownership
+  - formal financial modelling
+  - process mapping
+  - variance analysis
+  - VOSTRO/NOSTRO management
+  - SQL proficiency
+  - SAP proficiency
+  - Oracle proficiency
+  - Visio proficiency
+  - BPMN proficiency
+
+framing_rules:
+  - SS&C NAV experience must be framed as contributing inputs to daily NAV
+    production, never as owning or performing the NAV calculation.
+  - The Agrobank enterprise risk management role title is Executive.
+  - Microsoft Copilot Training Facilitator must appear in every tailored resume.
+  - Never invent experience, employers, dates, metrics or system proficiency.
+  - Remove an entire bullet rather than weakening or dropping its metric.

@@ -1,5 +1,9 @@
 __pycache__/
 *.pyc
 raw_jobs.csv
+filtered_jobs.csv
+ranked_jobs.csv
+final_jobs.csv
+resumes/
 .venv/
 .env
