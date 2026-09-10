@@ -127,6 +127,9 @@ def select_final(ranked: list) -> list:
     Mutates each row with selection_status / selection_reason and returns the
     selected subset.
     """
+    import careers
+    import history
+
     ordered = sorted(ranked, key=lambda r: -float(r.get("final_score") or 0))
     selected = []
 
@@ -137,7 +140,31 @@ def select_final(ranked: list) -> list:
             (t for t in config.DISQUALIFYING_TITLE_TERMS if t in title), None
         )
 
-        if disqualifier:
+        url = str(row.get("job_url") or "")
+        overridden = url and url in config.CAREER_FAMILY_OVERRIDES
+
+        family_status = row.get("career_family_status")
+        history_status = row.get("history_status")
+
+        # ---- Career-family gate --------------------------------------
+        # A high semantic score must NOT override an out-of-scope family.
+        # This is checked before the score threshold for exactly that reason.
+        if (family_status and not overridden
+                and not careers.is_actionable(family_status)):
+            row["selection_status"] = "out_of_scope"
+            row["selection_reason"] = (
+                f"career family gate: {row.get('career_family_reason') or family_status}"
+                f" (final score {score} ignored)"
+            )
+
+        # ---- Cross-run history gate ----------------------------------
+        elif history_status and not history.is_actionable(history_status):
+            row["selection_status"] = f"history_{history_status}"
+            row["selection_reason"] = (
+                f"history gate: {row.get('history_reason') or history_status}"
+            )
+
+        elif disqualifier:
             row["selection_status"] = "disqualified"
             row["selection_reason"] = (
                 f"entry-level title ('{disqualifier}') is a step backwards at "
@@ -160,8 +187,9 @@ def select_final(ranked: list) -> list:
             row["selection_status"] = "selected"
             row["selection_reason"] = (
                 f"final score {score} >= threshold "
-                f"{config.FINAL_SCORE_THRESHOLD}; "
-                f"strongest profile match: "
+                f"{config.FINAL_SCORE_THRESHOLD}; career family "
+                f"{row.get('career_family') or 'n/a'} "
+                f"({family_status or 'ungated'}); strongest profile match: "
                 f"{row.get('strongest_profile_match') or 'n/a'}"
             )
             selected.append(row)

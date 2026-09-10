@@ -39,9 +39,15 @@ jobs:
         run: |
           python test_filters.py
           python test_pipeline.py
+          python test_careers.py
+          python test_history.py
 
       - name: Run pipeline and send email
         env:
+          # Cross-run history is INACTIVE on Actions: runners are ephemeral and
+          # there is no safe mutable persistence. The GitHub cache is
+          # deliberately NOT abused as a database. Move execution to the VPS
+          # (or mount a durable volume) to activate it -- see README.
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}

@@ -18,15 +18,18 @@ Never ~950 LLM calls, and never an agent driving a browser.
 
 import sys
 import traceback
+from collections import Counter
 from datetime import datetime
 
 import pandas as pd
 
+import candidate as profile_mod
+import careers
 import config
 import emailer
 import enrich
 import filters
-import candidate as profile_mod
+import history
 import ranking
 import scraper
 import semantic
@@ -168,12 +171,43 @@ def main(argv=None) -> int:
               f"{config.EMBEDDING_MODEL} ...", flush=True)
         ranked = apply_semantic(passed, candidate_profile)
         ranked = ranking.apply_ranking(ranked)
-    write_stage(ranked, config.RANKED_CSV,
-                extra_cols=[f"component_{k}" for k in config.WEIGHTS])
-    print(f"Ranked {len(ranked)} jobs -> {config.RANKED_CSV}", flush=True)
+    print(f"Ranked {len(ranked)} jobs", flush=True)
 
-    top = ranked[:config.TOP_N_RANKED]
-    selected = ranking.select_final(top)
+    # ---- Career-family gating (after semantic, before selection) ---------
+    # Uses deterministic rules plus the SAME local model. No strong LLM.
+    if ranked:
+        careers.apply(ranked)
+        fam_counts = Counter(r.get("career_family_status") for r in ranked)
+        print(f"Career families: {dict(fam_counts)}", flush=True)
+
+    # ---- Cross-run history ------------------------------------------------
+    store = history.get_store()
+    backend = type(store).__name__
+    if isinstance(store, history.SqliteHistoryStore):
+        existing = len(store.all_records())
+        print(f"History: {backend} at {store.path} ({existing} known jobs)",
+              flush=True)
+    else:
+        print(f"History: {backend} -- NOT persistent; cross-run dedupe "
+              f"inactive this run", flush=True)
+    try:
+        if ranked:
+            history.apply_history(ranked, store)
+            hist_counts = Counter(r.get("history_status") for r in ranked)
+            print(f"History status: {dict(hist_counts)}", flush=True)
+
+        top = ranked[:config.TOP_N_RANKED]
+        selected = ranking.select_final(top)
+        for row in selected:
+            store.mark_shortlisted(row["job_id"])
+
+        # Written AFTER selection so every row carries its selection verdict,
+        # including the ones that were gated out.
+        write_stage(ranked, config.RANKED_CSV,
+                    extra_cols=[f"component_{k}" for k in config.WEIGHTS])
+        print(f"Wrote {len(ranked)} rows -> {config.RANKED_CSV}", flush=True)
+    finally:
+        store.close()
     for i, row in enumerate(selected, start=1):
         row["final_rank_display"] = i
     write_stage(top, config.FINAL_CSV,
@@ -221,6 +255,12 @@ def main(argv=None) -> int:
         "hard_rejected": n_hard,
         "keyword_passed": len(passed),
         "ranked": len(ranked),
+        "career_rejected": sum(
+            1 for r in ranked if not careers.is_actionable(
+                r.get("career_family_status"))),
+        "history_excluded": sum(
+            1 for r in ranked if r.get("history_status")
+            and not history.is_actionable(r.get("history_status"))),
         "selected": len(selected),
     }
     print(f"\nStats: {stats}", flush=True)

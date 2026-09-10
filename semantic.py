@@ -55,11 +55,16 @@ def normalise(similarity: float) -> float:
     """
     Rescale raw cosine similarity onto a readable 0-100 range.
 
+    The transform is FIXED (config.SEMANTIC_TRANSFORM_*) and must never be
+    refit to the batch being ranked -- otherwise a job's score would change
+    meaning day to day depending on what else was scraped. semantic_raw
+    carries the untransformed cosine and is the source of truth.
+
     IMPORTANT: this is a RANKING score. It says this job looks more like the
     profile than that one does. It is NOT a probability of being hired or an
     objective measure of employment fit.
     """
-    lo, hi = config.SIMILARITY_FLOOR, config.SIMILARITY_CEILING
+    lo, hi = config.SEMANTIC_TRANSFORM_FLOOR, config.SEMANTIC_TRANSFORM_CEILING
     if hi <= lo:
         return 0.0
     scaled = (float(similarity) - lo) / (hi - lo)
@@ -122,14 +127,20 @@ def score_jobs(jobs: list, profile: dict, model=None) -> list:
         if not texts[i]:
             # Nothing to embed (no title and no description) -- neutral, not a crash.
             results.append({
+                "semantic_raw": 0.0,
                 "semantic_score": 0.0,
                 "strongest_profile_match": "",
                 "strongest_section_score": 0.0,
             })
             continue
         best = int(np.argmax(row))
+        raw = aggregate(row, config.SEMANTIC_TOP_K_SECTIONS)
         results.append({
-            "semantic_score": normalise(aggregate(row, config.SEMANTIC_TOP_K_SECTIONS)),
+            # semantic_raw is the untransformed cosine: stable across runs,
+            # independent of the display transform, and the value any future
+            # labelled calibration should be fitted against.
+            "semantic_raw": round(float(raw), 4),
+            "semantic_score": normalise(raw),
             "strongest_profile_match": profile_mod.pretty_section(names[best]),
             "strongest_section_score": normalise(float(row[best])),
         })

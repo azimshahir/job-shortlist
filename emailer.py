@@ -44,16 +44,42 @@ def _why(job: dict) -> str:
     match = job.get("strongest_profile_match")
     if match:
         bits.append(f"closest to your <strong>{escape(str(match))}</strong> experience")
-    sem = job.get("semantic_score")
-    kw = job.get("keyword_score")
-    if sem is not None:
-        bits.append(f"semantic {sem}/100")
-    if kw is not None:
-        bits.append(f"keyword {kw}")
     matched = job.get("matched_keywords") or []
     if matched:
         bits.append("matched: " + escape(", ".join(matched[:8])))
     return " &middot; ".join(bits)
+
+
+def _scores_table(job: dict) -> str:
+    """
+    Everything needed to validate the ranking by hand -- this is the whole
+    point of the pre-LLM production pipeline.
+    """
+    family = job.get("career_family")
+    status = job.get("career_family_status")
+    cells = [
+        ("Career family",
+         f"{escape(str(family or 'n/a')).replace('_', ' ')} "
+         f"<em>({escape(str(status or 'ungated'))})</em>"),
+        ("Keyword score", escape(str(job.get("keyword_score", "-")))),
+        ("Semantic", f"{escape(str(job.get('semantic_score', '-')))}/100 "
+                     f"(raw {escape(str(job.get('semantic_raw', '-')))}, "
+                     f"rank #{escape(str(job.get('semantic_rank', '-')))})"),
+        ("Final score", f"<strong>{escape(str(job.get('final_score', '-')))}</strong>"),
+    ]
+    rows = "".join(
+        f'<tr><td style="padding:1px 10px 1px 0;color:#777;white-space:nowrap;">'
+        f'{label}</td><td style="padding:1px 0;">{value}</td></tr>'
+        for label, value in cells
+    )
+    reason = job.get("selection_reason")
+    reason_html = (
+        f'<div style="font-size:11px;color:#555;margin-top:5px;">'
+        f'<strong>Why selected:</strong> {escape(str(reason))}</div>'
+        if reason else ""
+    )
+    return (f'<table style="font-size:12px;margin-top:6px;border-collapse:collapse;">'
+            f'{rows}</table>{reason_html}')
 
 
 def _analysis_block(job: dict) -> str:
@@ -89,6 +115,8 @@ def build_html(final_jobs: list, stats: dict) -> str:
         f"{stats.get('hard_rejected', 0)} hard-rejected &rarr; "
         f"{stats.get('keyword_passed', 0)} through keyword filter &rarr; "
         f"{stats.get('ranked', 0)} semantically ranked &rarr; "
+        f"{stats.get('career_rejected', 0)} out-of-scope family &rarr; "
+        f"{stats.get('history_excluded', 0)} already seen/applied &rarr; "
         f"<strong>{stats.get('selected', 0)} recommended</strong>"
     )
 
@@ -137,6 +165,7 @@ def build_html(final_jobs: list, stats: dict) -> str:
             f'font-size:17px;">{job.get("final_score", "-")}</span></div>'
             f'<div style="color:#444;font-size:13px;">{" &middot; ".join(meta_bits)}</div>'
             f'<div style="color:#0a7d33;font-size:12px;margin-top:4px;">{_why(job)}</div>'
+            + _scores_table(job)
             + _analysis_block(job)
             + (f'<div style="font-size:12px;margin-top:6px;">'
                f'<a href="{escape(url, quote=True)}">'
