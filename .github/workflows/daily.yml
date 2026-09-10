@@ -1,0 +1,39 @@
+name: Daily job shortlist
+
+on:
+  schedule:
+    # 00:00 UTC = 08:00 Malaysia time (MYT is UTC+8, no daylight saving)
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}   # lets you run it by hand from the Actions tab
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper and send email
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: python scraper.py
+
+      - name: Upload raw results
+        if: always()   # still upload even if the email step failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-jobs-${{ github.run_number }}
+          path: raw_jobs.csv
+          if-no-files-found: warn
+          retention-days: 14
