@@ -140,6 +140,25 @@ HARD_REJECT_PATTERNS = {
 }
 
 
+# --------------------------------------------------------------------------
+# ALIAS GROUPS -- spellings of the SAME idea. A job that mentions both
+# "UAT" and "user acceptance testing" should score once, not twice, so each
+# group contributes only its highest-weighted member.
+# --------------------------------------------------------------------------
+ALIAS_GROUPS = [
+    {"uat", "user acceptance testing"},
+    {"asset liability", "asset-liability"},
+    {"shariah", "syariah"},
+    {"bank negara", "bnm"},
+    {"custody", "custodian"},
+]
+
+_ALIAS_OF = {}
+for _i, _grp in enumerate(ALIAS_GROUPS):
+    for _kw in _grp:
+        _ALIAS_OF[_kw] = _i
+
+
 def _phrase_regex(phrase: str) -> str:
     """Word-boundary regex for a literal phrase, tolerant of extra spacing."""
     parts = [re.escape(p) for p in phrase.split()]
@@ -191,13 +210,22 @@ def score_job(job: dict) -> dict:
         return {"keep": False, "score": 0, "matched": [],
                 "rejected_by": rejects, "reason": "hard reject"}
 
-    matched = []
-    score = 0
-    for kw, weight in BOOST_KEYWORDS.items():
-        if _BOOST_RE[kw].search(text):
-            matched.append((kw, weight))
-            score += weight
+    hits = [(kw, w) for kw, w in BOOST_KEYWORDS.items()
+            if _BOOST_RE[kw].search(text)]
 
+    # Collapse alias groups down to their single best-scoring member.
+    best_in_group = {}
+    matched = []
+    for kw, weight in hits:
+        gid = _ALIAS_OF.get(kw)
+        if gid is None:
+            matched.append((kw, weight))
+            continue
+        if gid not in best_in_group or weight > best_in_group[gid][1]:
+            best_in_group[gid] = (kw, weight)
+    matched.extend(best_in_group.values())
+
+    score = sum(w for _, w in matched)
     matched.sort(key=lambda kv: (-kv[1], kv[0]))
     keep = score >= MIN_SCORE
     return {
