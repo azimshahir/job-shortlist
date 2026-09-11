@@ -10,10 +10,10 @@ Cost shape, by design:
              -> at most 5 LLM calls.
 Never ~950 LLM calls, and never an agent driving a browser.
 
-    python pipeline.py                 full run
-    python pipeline.py --no-email      run everything, skip sending
+    python pipeline.py                 full run, prints the Markdown report
     python pipeline.py --from-raw      re-run analysis on the existing
                                        raw_jobs.csv (no scraping)
+    python pipeline.py --quiet         print only the report, no stage logs
 """
 
 import sys
@@ -26,11 +26,11 @@ import pandas as pd
 import candidate as profile_mod
 import careers
 import config
-import emailer
 import enrich
 import filters
 import history
 import ranking
+import report
 import scraper
 import semantic
 
@@ -41,6 +41,23 @@ def _s(value, default=""):
         return default
     text = str(value)
     return default if text.strip().lower() in ("nan", "nat", "none", "") else text
+
+
+def _fmt_salary(job: dict) -> str:
+    lo, hi = job.get("min_amount"), job.get("max_amount")
+
+    def num(v):
+        try:
+            v = float(v)
+            return f"{v:,.0f}" if v > 0 else None
+        except (TypeError, ValueError):
+            return None
+
+    lo, hi = num(lo), num(hi)
+    if not lo and not hi:
+        return ""
+    span = f"{lo} - {hi}" if lo and hi else (lo or hi)
+    return f"{job.get('currency') or 'MYR'} {span}"
 
 
 def to_records(df: pd.DataFrame) -> list:
@@ -117,7 +134,7 @@ def write_stage(rows: list, path: str, extra_cols=()) -> str:
         for col in cols:
             value = row.get(col)
             if col == "salary" and value is None:
-                value = emailer._fmt_salary(row)
+                value = _fmt_salary(row)
             if isinstance(value, list):
                 value = ", ".join(str(v) for v in value)
             record[col] = value
@@ -129,27 +146,37 @@ def write_stage(rows: list, path: str, extra_cols=()) -> str:
 # --------------------------------------------------------------------------
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    no_email = "--no-email" in argv
-    from_raw = "--from-raw" in argv
 
-    started = datetime.now(emailer.MYT)
-    print(f"Run started {started.isoformat()} (MYT)", flush=True)
+    # Windows consoles default to cp1252, which cannot print the arrows and
+    # Malay text in the report. Force UTF-8 rather than crash on output.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+    from_raw = "--from-raw" in argv
+    quiet = "--quiet" in argv
+
+    def log(msg):
+        if not quiet:
+            print(msg, flush=True)
+
+    started = datetime.now(report.MYT)
+    log(f"Run started {started.isoformat()} (MYT)")
 
     # ---- Phase 1: collect -------------------------------------------------
     if from_raw:
-        print(f"Reading existing {config.RAW_CSV} (no scraping)", flush=True)
+        log(f"Reading existing {config.RAW_CSV} (no scraping)")
         raw = pd.read_csv(config.RAW_CSV)
     else:
         raw = scraper.scrape_all()
         scraper.write_raw(raw)
-        print(f"Wrote {config.RAW_CSV}", flush=True)
+        log(f"Wrote {config.RAW_CSV}")
 
     n_raw = len(raw)
-    print(f"\nScraped {n_raw} raw rows", flush=True)
+    log(f"\nScraped {n_raw} raw rows")
 
     deduped = scraper.dedupe(raw)
     records = to_records(deduped)
-    print(f"{len(records)} rows after dedupe", flush=True)
+    log(f"{len(records)} rows after dedupe")
 
     # Stamps description_status / enrichment_needed. No browser is launched.
     records = enrich.enrich(records)
@@ -160,41 +187,40 @@ def main(argv=None) -> int:
     n_low = sum(1 for r in all_filtered
                 if r["filter_status"] == "below_keyword_threshold")
     write_stage(all_filtered, config.FILTERED_CSV)
-    print(f"Filter: {n_hard} hard-rejected, {n_low} below keyword threshold, "
-          f"{len(passed)} passed -> {config.FILTERED_CSV}", flush=True)
+    log(f"Filter: {n_hard} hard-rejected, {n_low} below keyword threshold, "
+          f"{len(passed)} passed -> {config.FILTERED_CSV}")
 
     # ---- Phase 3+4: semantic ranking then combined ranking -----------------
     candidate_profile = profile_mod.load_profile()
     ranked = []
     if passed:
-        print(f"Embedding {len(passed)} jobs locally with "
-              f"{config.EMBEDDING_MODEL} ...", flush=True)
+        log(f"Embedding {len(passed)} jobs locally with "
+              f"{config.EMBEDDING_MODEL} ...")
         ranked = apply_semantic(passed, candidate_profile)
         ranked = ranking.apply_ranking(ranked)
-    print(f"Ranked {len(ranked)} jobs", flush=True)
+    log(f"Ranked {len(ranked)} jobs")
 
     # ---- Career-family gating (after semantic, before selection) ---------
     # Uses deterministic rules plus the SAME local model. No strong LLM.
     if ranked:
         careers.apply(ranked)
         fam_counts = Counter(r.get("career_family_status") for r in ranked)
-        print(f"Career families: {dict(fam_counts)}", flush=True)
+        log(f"Career families: {dict(fam_counts)}")
 
     # ---- Cross-run history ------------------------------------------------
     store = history.get_store()
     backend = type(store).__name__
     if isinstance(store, history.SqliteHistoryStore):
         existing = len(store.all_records())
-        print(f"History: {backend} at {store.path} ({existing} known jobs)",
-              flush=True)
+        log(f"History: {backend} at {store.path} ({existing} known jobs)")
     else:
-        print(f"History: {backend} -- NOT persistent; cross-run dedupe "
-              f"inactive this run", flush=True)
+        log(f"History: {backend} -- NOT persistent; cross-run dedupe "
+              f"inactive this run")
     try:
         if ranked:
             history.apply_history(ranked, store)
             hist_counts = Counter(r.get("history_status") for r in ranked)
-            print(f"History status: {dict(hist_counts)}", flush=True)
+            log(f"History status: {dict(hist_counts)}")
 
         top = ranked[:config.TOP_N_RANKED]
         selected = ranking.select_final(top)
@@ -205,15 +231,15 @@ def main(argv=None) -> int:
         # including the ones that were gated out.
         write_stage(ranked, config.RANKED_CSV,
                     extra_cols=[f"component_{k}" for k in config.WEIGHTS])
-        print(f"Wrote {len(ranked)} rows -> {config.RANKED_CSV}", flush=True)
+        log(f"Wrote {len(ranked)} rows -> {config.RANKED_CSV}")
     finally:
         store.close()
     for i, row in enumerate(selected, start=1):
         row["final_rank_display"] = i
     write_stage(top, config.FINAL_CSV,
                 extra_cols=[f"component_{k}" for k in config.WEIGHTS])
-    print(f"Selected {len(selected)} of the top {len(top)} for deep analysis "
-          f"-> {config.FINAL_CSV}", flush=True)
+    log(f"Selected {len(selected)} of the top {len(top)} for deep analysis "
+          f"-> {config.FINAL_CSV}")
 
     # ---- Phase 6: strong LLM, on the final few ONLY -----------------------
     attachments = []
@@ -227,26 +253,26 @@ def main(argv=None) -> int:
             else:
                 job["llm_note"] = item["error"]
         if llm.is_configured():
-            print(f"Strong LLM: {sum(1 for a in analysed if a['status'] == 'ok')} "
-                  f"of {len(analysed)} analysed", flush=True)
+            log(f"Strong LLM: {sum(1 for a in analysed if a['status'] == 'ok')} "
+                  f"of {len(analysed)} analysed")
         else:
-            print("Strong LLM: not configured -- skipping JD analysis and "
-                  "resume generation (this is expected, not an error)", flush=True)
+            log("Strong LLM: not configured -- skipping JD analysis and "
+                  "resume generation (this is expected, not an error)")
 
         # ---- Phase 7: tailored resumes ------------------------------------
         placeholders = profile_mod.has_placeholders(candidate_profile)
         if any(a["status"] == "ok" for a in analysed):
             if placeholders:
-                print(f"Resumes skipped: candidate_profile.yaml still has "
-                      f"{len(placeholders)} TODO_ placeholder(s)", flush=True)
+                log(f"Resumes skipped: candidate_profile.yaml still has "
+                      f"{len(placeholders)} TODO_ placeholder(s)")
             else:
                 import resume
                 for res in resume.generate_resumes(analysed, candidate_profile):
                     if res["status"] == "ok":
                         attachments.append(res["path"])
-                        print(f"  resume: {res['path']}", flush=True)
+                        log(f"  resume: {res['path']}")
                     else:
-                        print(f"  resume skipped: {res['error']}", flush=True)
+                        log(f"  resume skipped: {res['error']}")
 
     # ---- Stats ------------------------------------------------------------
     stats = {
@@ -263,26 +289,18 @@ def main(argv=None) -> int:
             and not history.is_actionable(r.get("history_status"))),
         "selected": len(selected),
     }
-    print(f"\nStats: {stats}", flush=True)
+    log(f"\nStats: {stats}")
     for row in top:
-        print(f"  [{row.get('final_rank')}] {row.get('final_score'):>5} "
-              f"(kw {row.get('keyword_score')}, sem {row.get('semantic_score')}) "
-              f"{str(row.get('title'))[:48]} - {str(row.get('company'))[:24]}",
-              flush=True)
+        log(f"  [{row.get('final_rank')}] {row.get('final_score'):>5} "
+            f"(kw {row.get('keyword_score')}, sem {row.get('semantic_score')}) "
+            f"{str(row.get('title'))[:48]} - {str(row.get('company'))[:24]}")
 
-    # ---- Phase 8: email ---------------------------------------------------
-    if no_email:
-        print("\n--no-email: skipping send", flush=True)
-        return 0
-
+    # ---- Phase 8: report --------------------------------------------------
     others = [r for r in top if r.get("selection_status") != "selected"]
-    html = emailer.build_html(selected, stats, others=others)
-    try:
-        emailer.send_email(html, emailer.subject_for(stats), attachments)
-    except Exception as exc:  # noqa: BLE001
-        print(f"\nEMAIL FAILED: {type(exc).__name__}: {exc}", flush=True)
-        traceback.print_exc()
-        return 1
+    md = report.build_markdown(selected, others, stats)
+    report.write_report(md)
+    print()
+    print(md, flush=True)
     return 0
 
 

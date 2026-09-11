@@ -46,6 +46,7 @@ RAW_CSV = "raw_jobs.csv"
 FILTERED_CSV = "filtered_jobs.csv"
 RANKED_CSV = "ranked_jobs.csv"
 FINAL_CSV = "final_jobs.csv"
+REPORT_MD = "shortlist.md"
 RESUME_DIR = "resumes"
 
 # Columns preserved through the stage CSVs, where the data exists.
@@ -229,11 +230,8 @@ RESUME_NAME_PT = 16
 RESUME_MAX_PAGES = 2
 
 # --------------------------------------------------------------------------
-# Email (Phase 8)
+# Output (Phase 8) -- Markdown report for chat; email was removed on request
 # --------------------------------------------------------------------------
-SMTP_HOST = "smtp.gmail.com"
-SMTP_PORT = 587
-SMTP_TIMEOUT = 60
 MYT_UTC_OFFSET_HOURS = 8
 
 # --------------------------------------------------------------------------

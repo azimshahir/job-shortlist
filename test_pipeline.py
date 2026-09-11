@@ -194,15 +194,13 @@ def scraper_dedupe_safe(df):
 
 def test_zero_match_email():
     stats = {"raw": 952, "hard_rejected": 400, "keyword_passed": 40,
-             "ranked": 40, "selected": 0}
-    import emailer
-    html = emailer.build_html([], stats)
-    subject = emailer.subject_for(stats)
-    check("9. Zero-match email builds and says so plainly",
-          "no strong matches" in subject.lower()
-          and "No sufficiently strong matches" in html
-          and "952" in html,
-          f"subject: {subject}")
+             "ranked": 40, "career_rejected": 10, "history_excluded": 0,
+             "selected": 0}
+    import report
+    md = report.build_markdown([], [], stats)
+    check("9. Zero-match report builds and says so plainly",
+          "Tiada job cukup kuat" in md and "952" in md and "**0 disyorkan**" in md,
+          "report contains funnel, zero-match notice, and 0 disyorkan")
 
 
 # --------------------------------------------------------------------------

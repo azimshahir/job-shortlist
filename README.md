@@ -1,7 +1,7 @@
 # Daily Job Shortlist
 
 A multi-stage job-hunting pipeline for Kuala Lumpur / Selangor finance
-operations roles. Runs itself daily and emails a short, high-quality shortlist.
+operations roles. Run it from chat with `/jobs` and get a short, high-quality shortlist as a Markdown table.
 
 The whole design exists to keep expensive work rare:
 
@@ -15,7 +15,7 @@ JobSpy (~950 jobs)
    ↓  career-family gating       ) rules + the same local model
    ↓  cross-run history          ) SQLite; suppresses repeats & applied
    ↓  top 10 → final selection
-   ↓  email  ←── PRODUCTION STOPS HERE TODAY
+   ↓  Markdown report in chat  ←── PRODUCTION STOPS HERE TODAY
    ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ inert until explicitly enabled ┄┄┄┄┄
    ↓  strong LLM  ← at most 5 calls, ever
    ↓  tailored DOCX resume per role
@@ -61,7 +61,7 @@ From the real 952-job scrape:
 | `enrich.py` | 10 | Playwright fallback seam (not implemented) |
 | `llm.py` | 6 | The **only** module allowed to call a generative LLM |
 | `resume.py` | 7 | Tailored ATS-friendly DOCX |
-| `emailer.py` | 8 | HTML email + resume attachments |
+| `report.py` | 8 | Markdown report for chat (email was removed) |
 | `pipeline.py` | — | Orchestrates everything. **Run this.** |
 | `calibrate.py` | — | Evaluates the frozen transform against a **labelled** set |
 
@@ -74,7 +74,7 @@ python pipeline.py
 
 | Flag | Effect |
 |---|---|
-| `--no-email` | Run everything, skip sending |
+| `--quiet` | Print only the report, no stage logs |
 | `--from-raw` | Re-run analysis on the existing `raw_jobs.csv`, no scraping |
 
 `--from-raw` is the one to use while tuning — it re-scores in seconds without

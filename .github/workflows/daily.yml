@@ -1,14 +1,15 @@
-name: Daily job shortlist
+name: Job shortlist (manual)
 
+# No schedule and no email: the user runs the pipeline from chat with /jobs.
+# This workflow exists only as a CI check and an on-demand artifact producer.
 on:
-  schedule:
-    # 00:11 UTC = 08:11 Malaysia time. Deliberately off the top of the hour:
-    # GitHub's scheduler queues heavily at :00 and delays those runs most.
-    - cron: "11 0 * * *"
-  workflow_dispatch: {}   # lets you run it by hand from the Actions tab
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ["*.py", "candidate_profile.yaml", "requirements.txt"]
 
 jobs:
-  scrape:
+  test-and-run:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -20,8 +21,6 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      # The embedding model (~470MB) is downloaded once and reused, so most
-      # runs skip the download entirely.
       - name: Cache Hugging Face model
         uses: actions/cache@v4
         with:
@@ -30,7 +29,6 @@ jobs:
           restore-keys: hf-
 
       - name: Install dependencies
-        # CPU-only torch: the default wheel pulls ~2GB of CUDA we never use.
         run: |
           pip install --extra-index-url https://download.pytorch.org/whl/cpu \
             -r requirements.txt
@@ -42,25 +40,16 @@ jobs:
           python test_careers.py
           python test_history.py
 
-      - name: Run pipeline and send email
-        env:
-          # Cross-run history is INACTIVE on Actions: runners are ephemeral and
-          # there is no safe mutable persistence. The GitHub cache is
-          # deliberately NOT abused as a database. Move execution to the VPS
-          # (or mount a durable volume) to activate it -- see README.
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          # Optional -- leave unset and the pipeline skips JD analysis and
-          # resume generation gracefully. Never commit these values.
-          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Run pipeline (manual trigger only)
+        if: github.event_name == 'workflow_dispatch'
         run: python pipeline.py
 
+      - name: Show report in job summary
+        if: github.event_name == 'workflow_dispatch' && always()
+        run: cat shortlist.md >> "$GITHUB_STEP_SUMMARY" || true
+
       - name: Upload stage CSVs
-        if: always()   # still upload even if the email step failed
+        if: github.event_name == 'workflow_dispatch' && always()
         uses: actions/upload-artifact@v4
         with:
           name: stages-${{ github.run_number }}
@@ -69,14 +58,6 @@ jobs:
             filtered_jobs.csv
             ranked_jobs.csv
             final_jobs.csv
+            shortlist.md
           if-no-files-found: warn
-          retention-days: 14
-
-      - name: Upload tailored resumes
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: resumes-${{ github.run_number }}
-          path: resumes/*.docx
-          if-no-files-found: ignore   # none generated until an LLM is configured
           retention-days: 14
