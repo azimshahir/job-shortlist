@@ -160,10 +160,19 @@ MIN_FINAL_SELECTION = 0    # never pad the list to hit a quota
 # is a step backwards, and they score deceptively well semantically because the
 # JD describes exactly the right work. Handled here rather than as a keyword
 # hard-reject so they still appear in ranked_jobs.csv with a visible reason.
+# Checked against the TITLE ONLY -- unlike filters.HARD_REJECT, which scans
+# the whole description and would wrongly drop a good job that merely says
+# "reporting to the Senior Manager".
 DISQUALIFYING_TITLE_TERMS = (
+    # Entry level: a step backwards at 5 years' experience
     "intern", "internship", "trainee", "apprentice",
     "graduate programme", "graduate program", "fresh graduate",
     "undergraduate",
+    # Too senior: not a realistic move from executive level
+    # (multi-word only: a bare "coo" would match "Coordinator")
+    "associate director", "senior manager", "general manager",
+    "chief executive", "chief operating", "chief financial",
+    "senior vice president", "assistant vice president",
 )
 
 # A job must clear this combined score to be worth expensive analysis.

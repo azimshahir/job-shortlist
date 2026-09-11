@@ -275,7 +275,8 @@ def main(argv=None) -> int:
         print("\n--no-email: skipping send", flush=True)
         return 0
 
-    html = emailer.build_html(selected, stats)
+    others = [r for r in top if r.get("selection_status") != "selected"]
+    html = emailer.build_html(selected, stats, others=others)
     try:
         emailer.send_email(html, emailer.subject_for(stats), attachments)
     except Exception as exc:  # noqa: BLE001

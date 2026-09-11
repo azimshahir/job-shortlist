@@ -86,11 +86,7 @@ def _analysis_block(job: dict) -> str:
     """Render strong-LLM output when present; stay silent when it isn't."""
     analysis = job.get("llm_analysis")
     if not analysis:
-        note = job.get("llm_note")
-        if note:
-            return (f'<div style="color:#8a6d00;font-size:12px;margin-top:5px;">'
-                    f'{escape(str(note))}</div>')
-        return ""
+        return ""  # the "not configured" note is shown once, in the footer
 
     rows = []
     verdict = analysis.get("overall_suitability")
@@ -108,7 +104,52 @@ def _analysis_block(job: dict) -> str:
     return "".join(rows)
 
 
-def build_html(final_jobs: list, stats: dict) -> str:
+def _others_table(others: list) -> str:
+    """
+    The rest of the top N that were NOT selected, with the reason. This is
+    what makes the email useful for validating the gates: you can see what
+    came close and whether a rule fired wrongly, without lowering the bar.
+    """
+    if not others:
+        return ""
+    rows = []
+    for job in others:
+        url = str(job.get("job_url_direct") or job.get("job_url") or "")
+        title = escape(str(job.get("title") or "(no title)"))[:70]
+        link = (f'<a href="{escape(url, quote=True)}" style="color:#333;">{title}</a>'
+                if url else title)
+        status = str(job.get("selection_status") or "not_selected")
+        reason = str(job.get("selection_reason") or "")
+        # Keep the reason short: strip the verbose "(final score X ignored)" tail.
+        reason = reason.split(" (final score")[0][:110]
+        fam = str(job.get("career_family") or "-").replace("_", " ")
+        fam_status = str(job.get("career_family_status") or "-")
+        colour = {"out_of_scope": "#a33", "disqualified": "#a33"}.get(status, "#8a6d00")
+        rows.append(
+            '<tr style="border-bottom:1px solid #eee;">'
+            f'<td style="padding:5px 6px 5px 0;color:#888;">#{job.get("final_rank", "?")}</td>'
+            f'<td style="padding:5px 6px;"><div>{link}</div>'
+            f'<div style="color:#666;font-size:11px;">{escape(str(job.get("company") or "-"))}'
+            f' &middot; {escape(fam)} <em>({escape(fam_status)})</em></div></td>'
+            f'<td style="padding:5px 6px;text-align:right;white-space:nowrap;">'
+            f'{job.get("final_score", "-")}<br>'
+            f'<span style="color:#999;font-size:10px;">sem {job.get("semantic_score", "-")}</span></td>'
+            f'<td style="padding:5px 0 5px 6px;color:{colour};font-size:11px;">'
+            f'<strong>{escape(status.replace("_", " "))}</strong><br>{escape(reason)}</td>'
+            '</tr>'
+        )
+    return (
+        '<h3 style="margin:22px 0 4px;font-size:14px;color:#444;">'
+        f'Also ranked, not recommended ({len(others)})</h3>'
+        '<p style="color:#777;font-size:11px;margin:0 0 6px;">'
+        'Shown so you can check the gates. If one of these should have been '
+        'recommended, the reason on the right is the rule to fix.</p>'
+        '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+        + "".join(rows) + '</table>'
+    )
+
+
+def build_html(final_jobs: list, stats: dict, others: list = None) -> str:
     stamp = datetime.now(MYT).strftime("%A, %d %B %Y")
     funnel = (
         f"{stats.get('raw', 0)} scraped &rarr; "
@@ -136,7 +177,7 @@ def build_html(final_jobs: list, stats: dict) -> str:
             "The stage CSVs are attached to the GitHub Actions run if you want "
             "to see what came close.</p>"
         )
-        return head + body + "</body></html>"
+        return head + body + _others_table(others) + _footer(final_jobs) + "</body></html>"
 
     cards = []
     for job in final_jobs:
@@ -174,13 +215,20 @@ def build_html(final_jobs: list, stats: dict) -> str:
             + '</div>'
         )
 
-    foot = (
+    return head + "".join(cards) + _others_table(others) + _footer(final_jobs) + "</body></html>"
+
+
+def _footer(final_jobs: list) -> str:
+    note = next((j.get("llm_note") for j in (final_jobs or []) if j.get("llm_note")), "")
+    llm_line = (f'<br><span style="color:#8a6d00;">{escape(str(note))}</span>'
+                if note else "")
+    return (
         '<p style="color:#888;font-size:11px;margin-top:16px;">'
         "Match score ranks how closely a posting resembles your profile. "
         "It is a ranking aid, not a probability of being hired. "
-        "Tune weights in <code>config.py</code>.</p>"
+        "Tune weights and thresholds in <code>config.py</code>."
+        f"{llm_line}</p>"
     )
-    return head + "".join(cards) + foot + "</body></html>"
 
 
 def send_email(html: str, subject: str, attachments: list = None) -> None:

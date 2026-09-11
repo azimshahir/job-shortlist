@@ -167,9 +167,9 @@ def select_final(ranked: list) -> list:
         elif disqualifier:
             row["selection_status"] = "disqualified"
             row["selection_reason"] = (
-                f"entry-level title ('{disqualifier}') is a step backwards at "
-                f"{config.CANDIDATE_YEARS_EXPERIENCE} years' experience, "
-                f"despite final score {score}"
+                f"level mismatch: title contains '{disqualifier}', not a "
+                f"realistic move at {config.CANDIDATE_YEARS_EXPERIENCE} years' "
+                f"experience (final score {score})"
             )
         elif score < config.FINAL_SCORE_THRESHOLD:
             row["selection_status"] = "not_selected"
