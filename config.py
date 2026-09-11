@@ -414,6 +414,12 @@ CAREER_FAMILIES = {
                         "retail", "merchandising", "account manager",
                         "channel productivity", "store", "outlet",
                         "telemarketing", "relationship manager"),
+        # "Retail" in a BANK means retail banking, not a shop. A title like
+        # "Manager - Retail Credit Operations" is banking operations and must
+        # not be thrown out by the word "retail".
+        "rescue_terms": ("credit", "banking", "bank", "loan", "mortgage",
+                         "financing", "treasury", "operations centre",
+                         "operations center"),
     },
     "supply_chain_warehouse": {
         "status": "OUT_OF_SCOPE",

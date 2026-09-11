@@ -107,6 +107,16 @@ JOBS = {
                         "of till takings."),
         "expect_status": careers.OUT_OF_SCOPE,
     },
+    # "Retail" at a bank means retail banking -- must NOT be caught by the
+    # retail rule. Regression from the first production run.
+    "retail_banking_ops": {
+        "title": "Manager - Retail Credit Operations (Mortgage Funding)",
+        "company": "Hong Leong Bank",
+        "description": ("Oversee retail credit operations, loan disbursement "
+                        "and mortgage funding controls."),
+        # CORE or ADJACENT are both fine -- the point is it is NOT out of scope
+        "expect_status": (careers.CORE, careers.ADJACENT),
+    },
     "insurance": {
         "title": "Policy Servicing Manager (Policy Changes & Conservation)",
         "company": "Zurich Insurance",
@@ -123,9 +133,10 @@ def test_classification():
 
     for job, verdict in zip(jobs, verdicts):
         expected = job["expect_status"]
+        allowed = expected if isinstance(expected, tuple) else (expected,)
         actual = verdict["career_family_status"]
-        check(f"{job['key']}: {job['title'][:44]} -> {expected}",
-              actual == expected,
+        check(f"{job['key']}: {job['title'][:44]} -> {'/'.join(allowed)}",
+              actual in allowed,
               f"got {actual} / family '{verdict['career_family']}' "
               f"via {verdict['career_family_method']} "
               f"-- {verdict['career_family_reason'][:70]}")

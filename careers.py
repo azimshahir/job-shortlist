@@ -74,10 +74,13 @@ def classify_by_rules(job: dict) -> dict:
             continue
 
         # Rescue: the role is nominally out of scope but explicitly sits in
-        # the target domain, e.g. "Fund Services Compliance Officer".
-        rescue = _has_any(blob, config.CAREER_RESCUE_TERMS)
-        if rescue and _has_any(title, config.CAREER_RESCUE_TERMS):
-            continue  # fall through to the CORE checks below
+        # the target domain, e.g. "Fund Services Compliance Officer" or
+        # "Retail Credit Operations" at a bank. Global rescue terms apply to
+        # every family; a family may add its own.
+        rescue_terms = tuple(config.CAREER_RESCUE_TERMS) + tuple(
+            spec.get("rescue_terms", ()))
+        if _has_any(title, rescue_terms):
+            continue  # fall through to the confirmer / embedding passes
 
         return {
             "career_family": family,
