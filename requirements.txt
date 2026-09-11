@@ -1,15 +1,23 @@
+# Pinned to the exact versions verified locally on 2026-09-11. Unpinned, pip's
+# resolver backtracked for 8+ minutes in the cloud runner and timed out.
+# Install with CPU-only torch (much smaller, no CUDA):
+#   pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+
 # Phase 1 -- scraping (primary collector; do not replace with a browser)
-python-jobspy>=1.1.80
-pandas>=2.2.0
+python-jobspy==1.1.82
+pandas==2.3.3
+numpy==2.4.6
 
 # Phase 3 -- local embeddings. Runs on CPU; no hosted inference, no API key.
-sentence-transformers>=3.0.0
-PyYAML>=6.0
+torch==2.14.0
+transformers==5.17.0
+sentence-transformers==6.0.1
+PyYAML==6.0.3
 
 # Phase 7 -- DOCX resume generation
-python-docx>=1.1.0
+python-docx==1.2.0
 
-# Phase 6 -- strong LLM providers are OPTIONAL and intentionally not pinned
-# here. Install only the one you use:
+# Phase 6 -- strong LLM providers are OPTIONAL and intentionally not listed.
+# Install only the one you use:
 #   pip install anthropic     (LLM_PROVIDER=anthropic)
 #   pip install openai        (LLM_PROVIDER=openai)
