@@ -4,10 +4,11 @@ raw_jobs.csv
 filtered_jobs.csv
 ranked_jobs.csv
 final_jobs.csv
+# shortlist.md is committed by the routine as the daily record
 resumes/
 .venv/
 .env
-# Persistent job history -- local state, never committed
-job_history.db
+# job_history.db IS committed on purpose: the cloud routine has no other
+# durable storage, so it commits the db back after each run. Small, no secrets.
 job_history.db-journal
 job_history.db-wal
