@@ -14,7 +14,7 @@ resume guna langganan Claude sedia ada. Tiada API key.
 |---|---|---|---|
 | 0 | Pindah Python ke `scraper/` | Orchestrator | ✅ Siap 12 Sep |
 | 1 | Backend: Supabase schema, sink, workflows, API routes | Agent Backend | 🔄 Berjalan |
-| 2 | Designer: spec 4 skrin + mock | Agent Designer | 🔄 Berjalan |
+| 2 | Designer: spec 4 skrin + mock | Agent Designer | ✅ Siap 12 Sep |
 | 3 | Frontend: Next.js — login, Hari Ini, Semua Job, Runs, Detail | Agent Frontend | ⏳ Lepas Fasa 1 |
 | 4 | Butang Scrape sekarang + Minta resume | Backend + Frontend | ⏳ Lepas Fasa 3 |
 | 5 | `/resume` command (jana .docx guna langganan Claude) | Backend | ⏳ Lepas Fasa 1 |
@@ -46,11 +46,12 @@ resume guna langganan Claude sedia ada. Tiada API key.
 - [ ] `docs/backend.md` — panduan setup untuk Azim (Bahasa Melayu)
 - [ ] `scraper/migrate_sqlite.py` — pindah history lama sekali
 
-## Fasa 2 — Designer 🔄
+## Fasa 2 — Designer ✅
 
-- [ ] `docs/design.md` — spec: table, badge, 3 keadaan butang resume, mobile, empty/error
-- [ ] `docs/design-components.md` — senarai komponen shadcn + custom
-- [ ] `docs/mock-hari-ini.html` — mock visual skrin utama
+- [x] `docs/design.md` — spec: table, badge, keadaan butang resume, mobile, empty/error
+- [x] `docs/design-components.md` — senarai komponen shadcn + custom
+- [x] `docs/mock-hari-ini.html` — mock visual skrin utama
+- [ ] Nota untuk Frontend: butang resume ikut aliran queue (Minta → Dalam senarai → Download); prasyarat hanya CV, bukan API key
 
 ## Fasa 3 — Frontend ⏳
 
