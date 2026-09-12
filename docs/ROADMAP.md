@@ -15,11 +15,11 @@ resume guna langganan Claude sedia ada. Tiada API key.
 | 0 | Pindah Python ke `scraper/` | Orchestrator | ✅ Siap 12 Sep |
 | 1 | Backend: Supabase schema, sink, workflows, API routes | Agent Backend | ✅ Siap 12 Sep |
 | 2 | Designer: spec 4 skrin + mock | Agent Designer | ✅ Siap 12 Sep |
-| 3 | Frontend: Next.js — login, Hari Ini, Semua Job, Runs, Detail | Agent Frontend | 🔄 Berjalan |
-| 4 | Butang Scrape sekarang + Minta resume | Backend + Frontend | ⏳ Lepas Fasa 3 |
+| 3 | Frontend: Next.js — login, Hari Ini, Semua Job, Runs, Detail | Agent Frontend | ✅ Siap 13 Sep |
+| 4 | Butang Scrape sekarang + Minta resume | Backend + Frontend | ✅ Siap (belum diuji live) |
 | 5 | `/resume` command (jana .docx guna langganan Claude) | Backend | ✅ Siap (belum diuji — perlu CV) |
-| 6 | Setup akaun (Supabase, Vercel, secrets) | **Azim** + Orchestrator | 🟡 Boleh mula sekarang — `docs/backend.md` |
-| 7 | Deploy Vercel + smoke test | Orchestrator | ⏳ Lepas 3, 4, 6 |
+| 6 | Setup akaun (Supabase, Vercel, secrets) | **Azim** + Orchestrator | 🟡 **Giliran Azim** — `docs/backend.md` |
+| 7 | Deploy Vercel + smoke test | Orchestrator | ⏳ Lepas Fasa 6 |
 | 8 | Validasi seminggu, tune rules | Azim + Orchestrator | ⏳ Lepas 7 |
 
 ---
@@ -53,28 +53,28 @@ resume guna langganan Claude sedia ada. Tiada API key.
 - [x] `docs/mock-hari-ini.html` — mock visual skrin utama
 - [ ] Nota untuk Frontend: butang resume ikut aliran queue (Minta → Dalam senarai → Download); prasyarat hanya CV, bukan API key
 
-## Fasa 3 — Frontend 🔄
+## Fasa 3 — Frontend ✅
 
-- [ ] Login (Supabase Auth, email + password)
-- [ ] App shell: nav Hari Ini / Semua Job / Runs, logout
-- [ ] **Hari Ini** — satu table: # · Job · Company · Lokasi · Source · Family · KW · Sem · Final · Sebab · Status · Link · Resume
-- [ ] Baris Disyorkan di atas (highlight), baki ranked di bawah dengan sebab
-- [ ] Dropdown Status (new/applied/interview/offer/rejected/ignored) — simpan ke `job_actions`
-- [ ] Dropdown Label (strong/acceptable/weak/reject) — simpan ke `validation_labels`
-- [ ] Butang Link (apply terus vs lihat posting)
-- [ ] Butang Resume — 3 keadaan: kelabu+sebab / Minta / Download
-- [ ] Baris funnel + banner amaran "0 scraped"
-- [ ] **Semua Job** — table + filter (status, family, source, tarikh) + search
-- [ ] **Job Detail** drawer — description, semua skor, sebab, sejarah, nota
-- [ ] **Runs** — senarai run + funnel
-- [ ] Responsive: table scroll mendatar di telefon
-- [ ] `npm run build` + `lint` lulus
+- [x] Login (Supabase Auth, email + password)
+- [x] App shell: nav Hari Ini / Semua Job / Runs, logout
+- [x] **Hari Ini** — satu table: # · Job · Company · Lokasi · Source · Family · KW · Sem · Final · Sebab · Status · Link · Resume
+- [x] Baris Disyorkan di atas (highlight), baki ranked di bawah dengan sebab
+- [x] Dropdown Status (new/applied/interview/offer/rejected/ignored) — simpan ke `job_actions`
+- [x] Dropdown Label (strong/acceptable/weak/reject) — simpan ke `validation_labels`
+- [x] Butang Link (apply terus vs lihat posting)
+- [x] Butang Resume — 3 keadaan: kelabu+sebab / Minta / Download
+- [x] Baris funnel + banner amaran "0 scraped"
+- [x] **Semua Job** — table + filter (status, family, source, tarikh) + search
+- [x] **Job Detail** drawer — description, semua skor, sebab, sejarah, nota
+- [x] **Runs** — senarai run + funnel
+- [x] Responsive: table scroll mendatar di telefon
+- [x] `npm run build` + `lint` lulus
 
-## Fasa 4 — Butang aksi ⏳
+## Fasa 4 — Butang aksi ✅
 
-- [ ] **Scrape sekarang** → `/api/scrape` → GitHub dispatch → poll `runs` → toast siap
-- [ ] **Minta resume** → `/api/resume` → `resume_status = requested`
-- [ ] Poll `resume_status` → butang bertukar ke Download bila `ready`
+- [x] **Scrape sekarang** → `/api/scrape` → GitHub dispatch → poll `runs` → toast siap
+- [x] **Minta resume** → `/api/resume` → `resume_status = requested`
+- [x] Poll `resume_status` → butang bertukar ke Download bila `ready`
 
 ## Fasa 5 — `/resume` di Claude Code ⏳
 
@@ -87,12 +87,12 @@ resume guna langganan Claude sedia ada. Tiada API key.
 ## Fasa 6 — Setup akaun (Azim buat, ikut `docs/backend.md`) ⏳
 
 - [ ] Buat projek Supabase (percuma) → salin URL + 2 key
-- [ ] Jalankan migration SQL (copy-paste satu fail)
+- [ ] Jalankan migration SQL: `0001_init.sql` kemudian `0002_views.sql`
 - [ ] Buat satu user login (email + password) → salin user id
 - [ ] GitHub Secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_USER_ID`
 - [ ] Buat GitHub token (fine-grained, actions: write, repo ini sahaja)
 - [ ] Buat projek Vercel, sambung repo, root directory = `web/`
-- [ ] Vercel env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`
+- [ ] Vercel env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO` (+ `NEXT_PUBLIC_RESUME_PREREQ_OK=true` selepas CV diisi)
 - [ ] Jalankan `migrate_sqlite.py` sekali untuk bawa history lama
 
 ## Fasa 7 — Deploy + smoke test ⏳
@@ -133,4 +133,4 @@ resume guna langganan Claude sedia ada. Tiada API key.
 
 - **11 Sep** — Scraper siap, 952 job, semantic + career gating + history. Email dibuang. Cloud routine gagal (403).
 - **12 Sep** — Pivot ke dashboard. PRD v1.1, CLAUDE.md, Fasa 0 siap. Backend + Designer dilancarkan.
-- **13 Sep** — Backend + Designer siap (112 ujian). Frontend dilancarkan. Azim boleh mula Fasa 6.
+- **13 Sep** — Backend + Designer siap (112 ujian). Frontend siap, build hijau. Semua kod siap; tinggal Fasa 6 (akaun) dan 7 (deploy).
