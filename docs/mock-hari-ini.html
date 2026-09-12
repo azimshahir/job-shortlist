@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock — Hari Ini</title>
+<!-- Mock only. Production uses shadcn/ui + Tailwind build; no CDN. -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ['ui-sans-serif','system-ui','Segoe UI','Roboto','sans-serif'] } } } }
+</script>
+</head>
+<body class="bg-neutral-50 text-neutral-950 text-sm antialiased">
+
+<!-- App shell / top bar -->
+<header class="sticky top-0 z-40 h-14 border-b border-neutral-200 bg-white">
+  <div class="mx-auto flex h-14 max-w-screen-2xl items-center gap-6 px-4 md:px-6">
+    <a href="#" class="text-sm font-semibold">Job Shortlist</a>
+    <nav class="flex items-center gap-1">
+      <a href="#" class="rounded-md bg-neutral-100 px-3 py-1.5 text-sm font-medium">Hari Ini</a>
+      <a href="#" class="rounded-md px-3 py-1.5 text-sm font-medium hover:bg-neutral-100">Semua Job</a>
+      <a href="#" class="rounded-md px-3 py-1.5 text-sm font-medium hover:bg-neutral-100">Runs</a>
+    </nav>
+    <button class="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-neutral-200 text-xs font-medium" aria-label="Menu pengguna">AZ</button>
+  </div>
+</header>
+
+<main class="mx-auto w-full max-w-screen-2xl space-y-4 px-4 py-4 md:px-6 md:py-6">
+
+  <!-- Page header -->
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-lg font-semibold">Hari Ini</h1>
+      <p class="text-sm text-neutral-500">Run terakhir: 12 Sep 2026, 07:41 · cron</p>
+    </div>
+    <button class="inline-flex h-8 items-center gap-2 rounded-md bg-neutral-900 px-3 text-sm font-medium text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+      Scrape sekarang
+    </button>
+  </div>
+
+  <!-- Funnel line -->
+  <p class="break-words text-sm text-neutral-500">
+    927 scraped → 812 hard-reject → 115 lepas keyword → 10 ranked → 1 out-of-scope → 1 pernah nampak → <span class="font-semibold text-neutral-950">2 disyorkan</span>
+  </p>
+
+  <!-- Table -->
+  <div class="rounded-md border border-neutral-200 bg-white">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[1180px] caption-bottom text-sm">
+        <caption class="sr-only">Shortlist hari ini</caption>
+        <thead class="[&_tr]:border-b [&_tr]:border-neutral-200">
+          <tr class="text-left text-xs font-medium text-neutral-500">
+            <th scope="col" class="h-9 w-10 px-2 text-right">#</th>
+            <th scope="col" class="h-9 min-w-[240px] px-2">Job</th>
+            <th scope="col" class="h-9 min-w-[140px] px-2 hidden md:table-cell">Company</th>
+            <th scope="col" class="h-9 min-w-[120px] px-2 hidden md:table-cell">Lokasi</th>
+            <th scope="col" class="h-9 w-24 px-2 hidden md:table-cell">Source</th>
+            <th scope="col" class="h-9 min-w-[170px] px-2 hidden md:table-cell">Family</th>
+            <th scope="col" class="h-9 w-12 px-2 text-right hidden md:table-cell">KW</th>
+            <th scope="col" class="h-9 w-16 px-2 text-right hidden md:table-cell">Sem</th>
+            <th scope="col" class="h-9 w-16 px-2 text-right">Final</th>
+            <th scope="col" class="h-9 min-w-[120px] px-2">Sebab</th>
+            <th scope="col" class="h-9 w-[130px] px-2">Status</th>
+            <th scope="col" class="h-9 w-[110px] px-2 hidden md:table-cell">Label</th>
+            <th scope="col" class="h-9 w-12 px-2 text-center">Link</th>
+            <th scope="col" class="h-9 w-[160px] px-2"><span class="hidden md:inline">Tailored Resume</span><span class="md:hidden">Resume</span></th>
+          </tr>
+        </thead>
+        <tbody class="[&_tr]:border-b [&_tr]:border-neutral-200 [&_tr:last-child]:border-0">
+
+          <!-- Group header: Disyorkan -->
+          <tr class="bg-neutral-100/70">
+            <th scope="rowgroup" colspan="14" class="px-2 py-1.5 text-left text-xs font-medium text-neutral-500">Disyorkan (2)</th>
+          </tr>
+
+          <!-- 1 selected, status new (highlighted) -->
+          <tr class="cursor-pointer bg-neutral-900/5 hover:bg-neutral-900/10" tabindex="0">
+            <td class="px-2 py-1.5 text-right tabular-nums text-neutral-500">1</td>
+            <td class="max-w-[360px] px-2 py-1.5">
+              <div class="truncate" title="Assistant Manager, Middle Office, Investment Management">Assistant Manager, Middle Office, Investment Management</div>
+              <div class="truncate text-xs text-neutral-500 md:hidden">CACEIS · Kuala Lumpur</div>
+            </td>
+            <td class="max-w-[200px] truncate px-2 py-1.5 hidden md:table-cell">CACEIS</td>
+            <td class="max-w-[160px] truncate px-2 py-1.5 hidden md:table-cell">Kuala Lumpur</td>
+            <td class="px-2 py-1.5 text-neutral-500 hidden md:table-cell">linkedin</td>
+            <td class="px-2 py-1.5 hidden md:table-cell"><span class="inline-flex items-center gap-1.5 whitespace-nowrap">investment operations middle office <span class="rounded-md border border-neutral-200 px-1 text-[10px] font-medium">CORE</span></span></td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">64</td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">0.847</td>
+            <td class="px-2 py-1.5 text-right font-semibold tabular-nums">76.1</td>
+            <td class="px-2 py-1.5"><span class="rounded-md border border-green-300 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-800">dipilih</span></td>
+            <td class="px-2 py-1.5">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs" role="combobox" aria-label="Status">Baru <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 hidden md:table-cell">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs text-neutral-500" role="combobox" aria-label="Label">– <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 text-center">
+              <!-- apply-direct variant: Send icon, tooltip "Apply terus" -->
+              <a href="#" class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-neutral-100" title="Apply terus" aria-label="Apply terus"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></a>
+            </td>
+            <td class="px-2 py-1.5">
+              <!-- State 1: disabled, tooltip "CV induk belum diisi" -->
+              <span class="inline-flex" tabindex="0" title="CV induk belum diisi">
+                <button disabled class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium opacity-50" aria-label="Generate — CV induk belum diisi">
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                  Generate
+                </button>
+              </span>
+            </td>
+          </tr>
+
+          <!-- 2 selected, status applied (green tint wins over highlight) -->
+          <tr class="cursor-pointer bg-green-50 hover:bg-green-100/60" tabindex="0">
+            <td class="px-2 py-1.5 text-right tabular-nums text-neutral-500">2</td>
+            <td class="max-w-[360px] px-2 py-1.5">
+              <div class="truncate" title="Reconciliation Analyst">Reconciliation Analyst</div>
+              <div class="truncate text-xs text-neutral-500 md:hidden">Krypton Fund Services · Kuala Lumpur</div>
+            </td>
+            <td class="max-w-[200px] truncate px-2 py-1.5 hidden md:table-cell">Krypton Fund Services</td>
+            <td class="max-w-[160px] truncate px-2 py-1.5 hidden md:table-cell">Kuala Lumpur</td>
+            <td class="px-2 py-1.5 text-neutral-500 hidden md:table-cell">jobstreet</td>
+            <td class="px-2 py-1.5 hidden md:table-cell"><span class="inline-flex items-center gap-1.5 whitespace-nowrap">reconciliation <span class="rounded-md border border-neutral-200 px-1 text-[10px] font-medium">CORE</span></span></td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">48</td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">0.791</td>
+            <td class="px-2 py-1.5 text-right font-semibold tabular-nums">62.9</td>
+            <td class="px-2 py-1.5"><span class="rounded-md border border-green-300 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-800">dipilih</span></td>
+            <td class="px-2 py-1.5">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs text-green-800" role="combobox" aria-label="Status">Applied <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 hidden md:table-cell">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs" role="combobox" aria-label="Label">Strong <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 text-center">
+              <!-- view-posting variant: ExternalLink icon, tooltip "Lihat posting" -->
+              <a href="#" class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-neutral-100" title="Lihat posting" aria-label="Lihat posting"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+            </td>
+            <td class="px-2 py-1.5">
+              <span class="inline-flex" tabindex="0" title="CV induk belum diisi">
+                <button disabled class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium opacity-50">
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                  Generate
+                </button>
+              </span>
+            </td>
+          </tr>
+
+          <!-- Group header: Ranked, tak disyorkan -->
+          <tr class="bg-neutral-100/70">
+            <th scope="rowgroup" colspan="14" class="px-2 py-1.5 text-left text-xs font-medium text-neutral-500">Ranked, tak disyorkan (4)</th>
+          </tr>
+
+          <!-- 3 out of scope -->
+          <tr class="cursor-pointer hover:bg-neutral-100/60" tabindex="0">
+            <td class="px-2 py-1.5 text-right tabular-nums text-neutral-500">3</td>
+            <td class="max-w-[360px] px-2 py-1.5">
+              <div class="truncate" title="Systems Support Specialist, FCM M&E">Systems Support Specialist, FCM M&amp;E</div>
+              <div class="truncate text-xs text-neutral-500 md:hidden">FCM · Petaling Jaya</div>
+            </td>
+            <td class="max-w-[200px] truncate px-2 py-1.5 hidden md:table-cell">FCM</td>
+            <td class="max-w-[160px] truncate px-2 py-1.5 hidden md:table-cell">Petaling Jaya</td>
+            <td class="px-2 py-1.5 text-neutral-500 hidden md:table-cell">linkedin</td>
+            <td class="px-2 py-1.5 hidden md:table-cell"><span class="inline-flex items-center gap-1.5 whitespace-nowrap">it systems support <span class="rounded-md border border-red-300 px-1 text-[10px] font-medium text-red-700">OUT</span></span></td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">41</td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">0.802</td>
+            <td class="px-2 py-1.5 text-right font-semibold tabular-nums">68.3</td>
+            <td class="px-2 py-1.5"><span class="rounded-md border border-red-300 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800" title="career family gate: it_systems_support is OUT_OF_SCOPE (final score 68.3 ignored)">out of scope</span></td>
+            <td class="px-2 py-1.5">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs" role="combobox" aria-label="Status">Baru <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 hidden md:table-cell">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs text-neutral-500" role="combobox" aria-label="Label">– <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 text-center">
+              <a href="#" class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-neutral-100" title="Lihat posting" aria-label="Lihat posting"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+            </td>
+            <td class="px-2 py-1.5">
+              <span class="inline-flex" tabindex="0" title="CV induk belum diisi">
+                <button disabled class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium opacity-50">
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                  Generate
+                </button>
+              </span>
+            </td>
+          </tr>
+
+          <!-- 4 level mismatch (intern) -->
+          <tr class="cursor-pointer hover:bg-neutral-100/60" tabindex="0">
+            <td class="px-2 py-1.5 text-right tabular-nums text-neutral-500">4</td>
+            <td class="max-w-[360px] px-2 py-1.5">
+              <div class="truncate" title="Intern, Settlement – Equity">Intern, Settlement – Equity</div>
+              <div class="truncate text-xs text-neutral-500 md:hidden">Principal Malaysia · Kuala Lumpur</div>
+            </td>
+            <td class="max-w-[200px] truncate px-2 py-1.5 hidden md:table-cell">Principal Malaysia</td>
+            <td class="max-w-[160px] truncate px-2 py-1.5 hidden md:table-cell">Kuala Lumpur</td>
+            <td class="px-2 py-1.5 text-neutral-500 hidden md:table-cell">linkedin</td>
+            <td class="px-2 py-1.5 hidden md:table-cell"><span class="inline-flex items-center gap-1.5 whitespace-nowrap">settlement corporate actions <span class="rounded-md border border-neutral-200 px-1 text-[10px] font-medium">CORE</span></span></td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">52</td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">0.774</td>
+            <td class="px-2 py-1.5 text-right font-semibold tabular-nums">65.4</td>
+            <td class="px-2 py-1.5"><span class="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800" title="level mismatch: title contains 'intern', not a realistic move at 5 years' experience (final score 65.4)">intern</span></td>
+            <td class="px-2 py-1.5">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs" role="combobox" aria-label="Status">Baru <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 hidden md:table-cell">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs text-neutral-500" role="combobox" aria-label="Label">– <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 text-center">
+              <a href="#" class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-neutral-100" title="Apply terus" aria-label="Apply terus"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></a>
+            </td>
+            <td class="px-2 py-1.5">
+              <span class="inline-flex" tabindex="0" title="CV induk belum diisi">
+                <button disabled class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium opacity-50">
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                  Generate
+                </button>
+              </span>
+            </td>
+          </tr>
+
+          <!-- 5 cooldown -->
+          <tr class="cursor-pointer hover:bg-neutral-100/60" tabindex="0">
+            <td class="px-2 py-1.5 text-right tabular-nums text-neutral-500">5</td>
+            <td class="max-w-[360px] px-2 py-1.5">
+              <div class="truncate" title="Senior Executive, Loan Portfolio Management">Senior Executive, Loan Portfolio Management</div>
+              <div class="truncate text-xs text-neutral-500 md:hidden">Maybank · Kuala Lumpur</div>
+            </td>
+            <td class="max-w-[200px] truncate px-2 py-1.5 hidden md:table-cell">Maybank</td>
+            <td class="max-w-[160px] truncate px-2 py-1.5 hidden md:table-cell">Kuala Lumpur</td>
+            <td class="px-2 py-1.5 text-neutral-500 hidden md:table-cell">jobstreet</td>
+            <td class="px-2 py-1.5 hidden md:table-cell"><span class="inline-flex items-center gap-1.5 whitespace-nowrap">banking operations adjacent <span class="rounded-md border border-neutral-200 px-1 text-[10px] font-medium">ADJ</span></span></td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">45</td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">0.768</td>
+            <td class="px-2 py-1.5 text-right font-semibold tabular-nums">63.7</td>
+            <td class="px-2 py-1.5"><span class="rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700" title="history gate: shortlisted 6 days ago; cooldown 14 days">cooldown</span></td>
+            <td class="px-2 py-1.5">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs" role="combobox" aria-label="Status">Baru <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 hidden md:table-cell">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs text-neutral-500" role="combobox" aria-label="Label">– <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 text-center">
+              <a href="#" class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-neutral-100" title="Lihat posting" aria-label="Lihat posting"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+            </td>
+            <td class="px-2 py-1.5">
+              <span class="inline-flex" tabindex="0" title="CV induk belum diisi">
+                <button disabled class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium opacity-50">
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                  Generate
+                </button>
+              </span>
+            </td>
+          </tr>
+
+          <!-- 6 bawah 60 -->
+          <tr class="cursor-pointer hover:bg-neutral-100/60" tabindex="0">
+            <td class="px-2 py-1.5 text-right tabular-nums text-neutral-500">6</td>
+            <td class="max-w-[360px] px-2 py-1.5">
+              <div class="truncate" title="Settlement Operations Center Manager">Settlement Operations Center Manager</div>
+              <div class="truncate text-xs text-neutral-500 md:hidden">Hua Ao · Kuala Lumpur</div>
+            </td>
+            <td class="max-w-[200px] truncate px-2 py-1.5 hidden md:table-cell">Hua Ao</td>
+            <td class="max-w-[160px] truncate px-2 py-1.5 hidden md:table-cell">Kuala Lumpur</td>
+            <td class="px-2 py-1.5 text-neutral-500 hidden md:table-cell">indeed</td>
+            <td class="px-2 py-1.5 hidden md:table-cell"><span class="inline-flex items-center gap-1.5 whitespace-nowrap">settlement corporate actions <span class="rounded-md border border-neutral-200 px-1 text-[10px] font-medium">CORE</span></span></td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">37</td>
+            <td class="px-2 py-1.5 text-right tabular-nums hidden md:table-cell">0.741</td>
+            <td class="px-2 py-1.5 text-right font-semibold tabular-nums">58.6</td>
+            <td class="px-2 py-1.5"><span class="rounded-md border border-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-500" title="final score 58.6 below threshold 60.0">bawah 60</span></td>
+            <td class="px-2 py-1.5">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs" role="combobox" aria-label="Status">Baru <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 hidden md:table-cell">
+              <button class="flex h-7 w-full items-center justify-between rounded-md border border-neutral-200 bg-white px-2 text-xs text-neutral-500" role="combobox" aria-label="Label">– <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+            </td>
+            <td class="px-2 py-1.5 text-center">
+              <a href="#" class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-neutral-100" title="Lihat posting" aria-label="Lihat posting"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+            </td>
+            <td class="px-2 py-1.5">
+              <span class="inline-flex" tabindex="0" title="CV induk belum diisi">
+                <button disabled class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium opacity-50">
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                  Generate
+                </button>
+              </span>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="text-xs text-neutral-500">Sem = raw cosine ke profil; ranking aid, bukan kebarangkalian dapat kerja.</p>
+
+  <!-- Mock notes (not part of the product UI) -->
+  <div class="mt-8 rounded-md border border-dashed border-neutral-300 bg-white p-4 text-xs text-neutral-600 space-y-2">
+    <p class="font-medium text-neutral-900">Nota mock (bukan sebahagian UI)</p>
+    <p>Resume button di atas dalam <b>keadaan 1 (disabled)</b>. Hover / fokus pada butang menunjukkan tooltip: <span class="rounded bg-neutral-900 px-1.5 py-0.5 text-white">CV induk belum diisi</span>. Bila CV dah diisi tapi key tiada: <span class="rounded bg-neutral-900 px-1.5 py-0.5 text-white">API key LLM belum ditetapkan</span>.</p>
+    <p>Keadaan lain (rujuk design.md §6):</p>
+    <div class="flex flex-wrap items-center gap-3">
+      <button class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>Generate</button>
+      <span>→</span>
+      <button disabled class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium opacity-70"><svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Menjana… ~1 min</button>
+      <span>→</span>
+      <span class="inline-flex items-center"><a href="#" class="inline-flex h-7 items-center gap-1.5 rounded-md bg-neutral-900 px-2.5 text-xs font-medium text-white"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Download</a><a href="#" class="h-7 px-1 text-xs leading-7 text-neutral-500 underline-offset-4 hover:underline">jana semula</a></span>
+      <span>·</span>
+      <span class="inline-flex items-center gap-1"><svg class="h-3.5 w-3.5 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Gagal: LLM timeout"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><button class="inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 text-xs font-medium">Generate</button><span class="text-neutral-500">(gagal — tooltip: "Gagal: LLM timeout")</span></span>
+    </div>
+    <p>Baris 2 menunjukkan <b>status = applied</b> (tint hijau menang atas highlight Disyorkan). Link: baris 1 &amp; 4 = ikon <i>Send</i> "Apply terus" (ada <code>job_url_direct</code>); yang lain = ikon <i>ExternalLink</i> "Lihat posting".</p>
+    <p>Kecilkan tetingkap &lt; 768px: Company / Lokasi / Source / Family / KW / Sem / Label hilang; company · lokasi muncul di bawah tajuk; table scroll mendatar dalam bingkai.</p>
+  </div>
+</main>
+</body>
+</html>
