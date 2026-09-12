@@ -34,30 +34,50 @@ export function cleanLocation(loc: string | null | undefined): string {
   return out || "–";
 }
 
-function fmt(iso: string, opts: Intl.DateTimeFormatOptions): string | null {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("en-GB", { timeZone: MYT, ...opts }).format(d);
+const MONTHS = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogos", "Sep", "Okt", "Nov", "Dis"];
+
+type Parts = { d: string; m: string; y: string; hh: string; mm: string };
+
+function partsMYT(iso: string): Parts | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const f = new Intl.DateTimeFormat("en-GB", {
+    timeZone: MYT,
+    year: "numeric",
+    month: "numeric",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const get = (type: string) =>
+    f.formatToParts(date).find((p) => p.type === type)?.value ?? "";
+  const monthIdx = Number.parseInt(get("month"), 10) - 1;
+  return {
+    d: get("day"),
+    m: MONTHS[monthIdx] ?? get("month"),
+    y: get("year"),
+    hh: get("hour") === "24" ? "00" : get("hour"),
+    mm: get("minute"),
+  };
 }
 
 /** '12 Sep 2026, 07:41' in MYT. */
 export function fmtDateTimeMYT(iso: string | null | undefined): string {
-  if (!iso) return "–";
-  const date = fmt(iso, { day: "2-digit", month: "short", year: "numeric" });
-  const time = fmt(iso, { hour: "2-digit", minute: "2-digit", hour12: false });
-  return date && time ? `${date}, ${time}` : "–";
+  const p = iso ? partsMYT(iso) : null;
+  return p ? `${p.d} ${p.m} ${p.y}, ${p.hh}:${p.mm}` : "–";
 }
 
 /** '12 Sep 2026' in MYT. */
 export function fmtDateMYT(iso: string | null | undefined): string {
-  if (!iso) return "–";
-  return fmt(iso, { day: "2-digit", month: "short", year: "numeric" }) ?? "–";
+  const p = iso ? partsMYT(iso) : null;
+  return p ? `${p.d} ${p.m} ${p.y}` : "–";
 }
 
 /** '12 Sep' in MYT. */
 export function fmtDayMonthMYT(iso: string | null | undefined): string {
-  if (!iso) return "–";
-  return fmt(iso, { day: "2-digit", month: "short" }) ?? "–";
+  const p = iso ? partsMYT(iso) : null;
+  return p ? `${p.d} ${p.m}` : "–";
 }
 
 /** 'yyyy-mm-dd' of an instant in MYT (for "today" comparisons). */

@@ -71,7 +71,7 @@ export function JobDrawer({
 
   return (
     <Sheet open={row !== null} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+      <SheetContent side="right" className="overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-xl">
         {row ? (
           <>
             <SheetHeader className="pr-10">
