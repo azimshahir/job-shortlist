@@ -1,20 +1,35 @@
-name: Job shortlist (manual)
+name: Daily job shortlist
 
-# No schedule and no email: the user runs the pipeline from chat with /jobs.
-# This workflow exists only as a CI check and an on-demand artifact producer.
+# WHY THIS RUNS ON ACTIONS AND NOT IN THE CLAUDE CLOUD ROUTINE
+#   The Claude cloud sandbox's egress proxy returns 403 for linkedin.com and
+#   indeed.com, so it cannot scrape. GitHub runners can. So: Actions scrapes
+#   and commits shortlist.md + job_history.db back to main; the Claude routine
+#   then only reads shortlist.md from the repo and presents it.
+#
+#   The user never needs to open GitHub -- this is plumbing.
+
 on:
+  schedule:
+    # 23:40 UTC = 07:40 MYT, so the report is committed before the Claude
+    # routine reads it at ~08:15 MYT. Off the top of the hour on purpose.
+    - cron: "40 23 * * *"
   workflow_dispatch: {}
-  push:
-    branches: [main]
-    paths: ["*.py", "candidate_profile.yaml", "requirements.txt"]
+
+permissions:
+  contents: write   # needed to push shortlist.md and job_history.db
 
 jobs:
-  test-and-run:
+  scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    concurrency:
+      group: daily-shortlist
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -40,16 +55,30 @@ jobs:
           python test_careers.py
           python test_history.py
 
-      - name: Run pipeline (manual trigger only)
-        if: github.event_name == 'workflow_dispatch'
-        run: python pipeline.py
+      - name: Run pipeline
+        run: python pipeline.py --quiet
 
       - name: Show report in job summary
-        if: github.event_name == 'workflow_dispatch' && always()
+        if: always()
         run: cat shortlist.md >> "$GITHUB_STEP_SUMMARY" || true
 
+      - name: Commit report and history back to main
+        if: always()
+        run: |
+          git config user.name  "job-shortlist-bot"
+          git config user.email "bot@job-shortlist"
+          git add shortlist.md job_history.db
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+            exit 0
+          fi
+          git commit -m "Daily shortlist $(date -u +%Y-%m-%d)"
+          # main may have moved (user pushed a rule change); rebase then push.
+          git pull --rebase origin main
+          git push origin main
+
       - name: Upload stage CSVs
-        if: github.event_name == 'workflow_dispatch' && always()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: stages-${{ github.run_number }}
