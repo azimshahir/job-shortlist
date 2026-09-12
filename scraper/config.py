@@ -481,8 +481,22 @@ CAREER_FAMILY_OVERRIDES = ()
 # --------------------------------------------------------------------------
 # Storage is behind an interface (history.py) so execution can move from
 # GitHub Actions to a VPS without touching pipeline logic.
-HISTORY_BACKEND = "sqlite"        # "sqlite" | "memory"
-HISTORY_DB_PATH = "job_history.db"
+# Env override so GitHub Actions can point at Supabase without a code edit.
+HISTORY_BACKEND = os.environ.get("HISTORY_BACKEND", "sqlite").strip().lower()
+# "sqlite" | "memory" | "supabase"
+HISTORY_DB_PATH = os.environ.get("HISTORY_DB_PATH", "job_history.db")
+
+# --------------------------------------------------------------------------
+# Supabase (sink.py + SupabaseHistoryStore). Read from env ONLY; never
+# hardcode. Missing values are tolerated here and rejected loudly in sink.py
+# the moment the supabase sink or history backend is actually selected.
+# --------------------------------------------------------------------------
+SINK = os.environ.get("SINK", "csv").strip().lower()     # "csv" | "supabase"
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+SUPABASE_USER_ID = os.environ.get("SUPABASE_USER_ID", "").strip()
+SUPABASE_BATCH_SIZE = 200
+SUPABASE_RESUME_BUCKET = "resumes"
 
 # A job already shortlisted is not re-shown every morning. After this many
 # days it becomes eligible again -- postings do get genuinely refreshed.

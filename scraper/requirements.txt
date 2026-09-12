@@ -17,6 +17,9 @@ PyYAML==6.0.3
 # Phase 7 -- DOCX resume generation
 python-docx==1.2.0
 
+# Supabase sink + history backend (sink.py, history.SupabaseHistoryStore)
+supabase==2.31.0
+
 # Phase 6 -- strong LLM providers are OPTIONAL and intentionally not listed.
 # Install only the one you use:
 #   pip install anthropic     (LLM_PROVIDER=anthropic)

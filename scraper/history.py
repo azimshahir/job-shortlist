@@ -7,8 +7,9 @@ reappear every morning, and so a job marked applied never comes back into the
 actionable shortlist.
 
 STORAGE ABSTRACTION
-    HistoryStore is the interface. SqliteHistoryStore is the production
-    implementation; MemoryHistoryStore is for tests. Pipeline logic talks only
+    HistoryStore is the interface. SqliteHistoryStore is the local
+    implementation; SupabaseHistoryStore is what GitHub Actions uses
+    (HISTORY_BACKEND=supabase); MemoryHistoryStore is for tests. Pipeline logic talks only
     to the interface, so moving execution from GitHub Actions to a VPS -- or
     swapping SQLite for Postgres -- touches nothing outside this file.
 
@@ -26,6 +27,7 @@ A NOTE ON GITHUB ACTIONS
          HISTORY_DB_PATH pointing at a durable path.
       2. Point HISTORY_DB_PATH at a mounted network volume.
       3. Add a hosted-database backend behind this same interface.
+         -> done: SupabaseHistoryStore (HISTORY_BACKEND=supabase).
 
     Until then, a GitHub Actions run starts with an empty history: nothing
     breaks, cross-run dedupe simply does not apply. The pipeline reports which
@@ -368,12 +370,201 @@ class MemoryHistoryStore(HistoryStore):
         return [dict(r) for r in self._rows.values()]
 
 
+class SupabaseHistoryStore(HistoryStore):
+    """
+    Hosted backend. Same policy, different storage.
+
+    Mapping (see CLAUDE.md "Data contract"):
+        jobs row                      <-> history record
+        job_actions.status='applied'  <-> applied (+ applied_date)
+        job_actions.status='ignored'  <-> ignored (+ notes as ignore_reason)
+        job_actions.resume_status     <-> resume_generated ('ready')
+        jobs.shortlisted_before / shortlist_count / last_shortlisted_at
+                                      <-> denormalised from job_scores rows
+                                          with selection_status='selected'
+                                          (bumped here on mark_shortlisted)
+
+    All rows for the user are loaded once at construction (paged), so the
+    pipeline's per-job lookups are in-memory. Writes go straight through.
+
+    Per-run counting rule: when the Supabase sink is active it has already
+    recorded this run's jobs (sink.write_jobs runs before history), so any
+    row with last_seen >= sink.run_started_at() is NOT bumped again here.
+    seen_count therefore means "runs in which this job appeared" under both
+    the csv and supabase sinks.
+
+    Repost rule mirrors SqliteHistoryStore: the history record for a
+    content_key is always its OLDEST row (the original posting), even when
+    the sink has inserted a separate row for the repost's own job_id (it
+    must exist for the job_scores foreign key). So a repost is recognised,
+    and applied / ignored / cooldown on the original keep applying to it.
+    """
+
+    PAGE = 1000
+
+    def __init__(self, client=None, user_id: str = None):
+        import sink  # local import: sink imports this module
+        self._client = client or sink.get_client()
+        self._uid = user_id or sink.user_id()
+        # Rows touched at/after this instant were already counted this run.
+        self._started = sink.run_started_at() or _now().isoformat()
+        self._rows = {}          # job_id -> record dict
+        self._load()
+
+    # ---- loading ----------------------------------------------------------
+    def _page(self, table: str, columns: str = "*"):
+        out, start = [], 0
+        while True:
+            resp = (self._client.table(table).select(columns)
+                    .eq("user_id", self._uid)
+                    .range(start, start + self.PAGE - 1)
+                    .execute())
+            data = resp.data or []
+            out.extend(data)
+            if len(data) < self.PAGE:
+                return out
+            start += self.PAGE
+
+    def _load(self):
+        actions = {a["job_id"]: a for a in self._page("job_actions")}
+        for job in self._page("jobs"):
+            self._rows[job["job_id"]] = self._to_record(job, actions.get(job["job_id"]))
+
+    @staticmethod
+    def _to_record(job: dict, action: dict = None) -> dict:
+        action = action or {}
+        status = action.get("status") or "new"
+        return {
+            "job_id": job["job_id"],
+            "content_key": job.get("content_key") or "",
+            "url_key": job.get("url_key") or "",
+            "source": job.get("source"),
+            "company": job.get("company"),
+            "title": job.get("title"),
+            "location": job.get("location"),
+            "job_url": job.get("job_url_direct") or job.get("job_url"),
+            "first_seen": job.get("first_seen"),
+            "last_seen": job.get("last_seen"),
+            "seen_count": int(job.get("seen_count") or 0),
+            "shortlisted_before": 1 if job.get("shortlisted_before") else 0,
+            "shortlist_count": int(job.get("shortlist_count") or 0),
+            "last_shortlisted_at": job.get("last_shortlisted_at"),
+            "resume_generated": 1 if action.get("resume_status") == "ready" else 0,
+            "applied": 1 if status == "applied" else 0,
+            "applied_date": action.get("applied_date"),
+            "ignored": 1 if status == "ignored" else 0,
+            "ignore_reason": action.get("notes") if status == "ignored" else None,
+        }
+
+    # ---- reads ------------------------------------------------------------
+    def _canonical(self, content_key: str):
+        """Oldest row sharing the content_key: the original posting."""
+        if not content_key:
+            return None
+        candidates = [r for r in self._rows.values()
+                      if r["content_key"] == content_key]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda r: (str(r.get("first_seen") or ""),
+                                              r["job_id"]))
+
+    def get(self, job_id, content_key):
+        canonical = self._canonical(content_key)
+        if canonical is not None:
+            return dict(canonical)
+        row = self._rows.get(job_id)
+        return dict(row) if row is not None else None
+
+    # ---- writes -----------------------------------------------------------
+    def _table(self, name):
+        return self._client.table(name)
+
+    def upsert_seen(self, record):
+        now = _now().isoformat()
+        existing = self.get(record["job_id"], record.get("content_key", ""))
+
+        if existing is None:
+            payload = {
+                "job_id": record["job_id"],
+                "user_id": self._uid,
+                "content_key": record.get("content_key") or "",
+                "url_key": record.get("url_key") or None,
+                "source": record.get("source"),
+                "title": record.get("title"),
+                "company": record.get("company"),
+                "location": record.get("location"),
+                "job_url": record.get("job_url"),
+                "first_seen": now, "last_seen": now, "seen_count": 1,
+                "shortlisted_before": False, "shortlist_count": 0,
+                "last_shortlisted_at": None,
+            }
+            self._table("jobs").upsert(payload, on_conflict="job_id").execute()
+            self._rows[record["job_id"]] = self._to_record(payload)
+            return dict(self._rows[record["job_id"]])
+
+        row = self._rows[existing["job_id"]]
+        if str(row.get("last_seen") or "") >= self._started:
+            return dict(row)          # already counted in this run
+        row["last_seen"] = now
+        row["seen_count"] = int(row.get("seen_count") or 0) + 1
+        (self._table("jobs")
+         .update({"last_seen": now, "seen_count": row["seen_count"]})
+         .eq("job_id", row["job_id"]).execute())
+        return dict(row)
+
+    def mark_shortlisted(self, job_id):
+        row = self._rows.get(job_id)
+        if row is None:
+            return
+        # Also stamp the original posting, so a repost's shortlist re-arms
+        # the cooldown on the record that get() will return tomorrow.
+        canonical = self._canonical(row.get("content_key"))
+        targets = [row] if canonical is None or canonical is row \
+            else [row, self._rows[canonical["job_id"]]]
+        now = _now().isoformat()
+        for target in targets:
+            target["shortlisted_before"] = 1
+            target["shortlist_count"] = int(target.get("shortlist_count") or 0) + 1
+            target["last_shortlisted_at"] = now
+            (self._table("jobs")
+             .update({"shortlisted_before": True,
+                      "shortlist_count": target["shortlist_count"],
+                      "last_shortlisted_at": now})
+             .eq("job_id", target["job_id"]).execute())
+
+    def _upsert_action(self, job_id, **fields):
+        payload = {"job_id": job_id, "user_id": self._uid, **fields}
+        self._table("job_actions").upsert(payload, on_conflict="job_id").execute()
+
+    def mark_applied(self, job_id, when=None):
+        when = (when or _now()).isoformat() if not isinstance(when, str) else when
+        self._upsert_action(job_id, status="applied", applied_date=when[:10])
+        if job_id in self._rows:
+            self._rows[job_id].update(applied=1, applied_date=when)
+
+    def mark_ignored(self, job_id, reason=""):
+        self._upsert_action(job_id, status="ignored", notes=reason or None)
+        if job_id in self._rows:
+            self._rows[job_id].update(ignored=1, ignore_reason=reason)
+
+    def mark_resume_generated(self, job_id):
+        self._upsert_action(job_id, resume_status="ready")
+        if job_id in self._rows:
+            self._rows[job_id]["resume_generated"] = 1
+
+    def all_records(self):
+        return sorted((dict(r) for r in self._rows.values()),
+                      key=lambda r: str(r.get("last_seen") or ""), reverse=True)
+
+
 def get_store(backend: str = None, path: str = None) -> HistoryStore:
     backend = (backend or config.HISTORY_BACKEND).lower()
     if backend == "sqlite":
         return SqliteHistoryStore(path)
     if backend == "memory":
         return MemoryHistoryStore()
+    if backend == "supabase":
+        return SupabaseHistoryStore()
     raise ValueError(f"unknown HISTORY_BACKEND: {backend!r}")
 
 

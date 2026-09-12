@@ -14,8 +14,11 @@ Never ~950 LLM calls, and never an agent driving a browser.
     python pipeline.py --from-raw      re-run analysis on the existing
                                        raw_jobs.csv (no scraping)
     python pipeline.py --quiet         print only the report, no stage logs
+    python pipeline.py --sink supabase write runs/jobs/job_scores to Supabase
+                                       (default: env SINK, else csv)
 """
 
+import os
 import sys
 import traceback
 from collections import Counter
@@ -33,6 +36,7 @@ import ranking
 import report
 import scraper
 import semantic
+import sink
 
 
 def _s(value, default=""):
@@ -62,6 +66,25 @@ def _fmt_salary(job: dict) -> str:
 
 def to_records(df: pd.DataFrame) -> list:
     return [] if df is None or df.empty else df.to_dict("records")
+
+
+def parse_sink(argv: list) -> str:
+    """--sink supabase|csv; falls back to env SINK (config.SINK), else csv."""
+    value = None
+    for i, arg in enumerate(argv):
+        if arg == "--sink" and i + 1 < len(argv):
+            value = argv[i + 1]
+        elif arg.startswith("--sink="):
+            value = arg.split("=", 1)[1]
+    value = (value or config.SINK or "csv").strip().lower()
+    if value not in ("csv", "supabase"):
+        raise SystemExit(f"--sink must be csv or supabase, got {value!r}")
+    return value
+
+
+def run_trigger() -> str:
+    """cron when launched by the Actions schedule; manual otherwise."""
+    return "cron" if os.environ.get("GITHUB_EVENT_NAME") == "schedule" else "manual"
 
 
 # --------------------------------------------------------------------------
@@ -154,6 +177,8 @@ def main(argv=None) -> int:
             stream.reconfigure(encoding="utf-8", errors="replace")
     from_raw = "--from-raw" in argv
     quiet = "--quiet" in argv
+    sink_name = parse_sink(argv)
+    sink.select(sink_name)
 
     def log(msg):
         if not quiet:
@@ -161,6 +186,30 @@ def main(argv=None) -> int:
 
     started = datetime.now(report.MYT)
     log(f"Run started {started.isoformat()} (MYT)")
+
+    # ---- Sink: fail loudly BEFORE scraping if env is missing --------------
+    run_id = None
+    if sink.is_selected():
+        sink.require_env()
+        run_id = sink.start_run(run_trigger())
+        log(f"Sink: supabase (run {run_id})")
+    else:
+        log("Sink: csv only (no Supabase write)")
+
+    try:
+        return _run(argv, from_raw, quiet, log, run_id)
+    except BaseException as exc:  # noqa: BLE001 - record the failure, then re-raise
+        if run_id:
+            try:
+                sink.finish_run(run_id, {}, status="failed",
+                                error=f"{type(exc).__name__}: {exc}")
+            except Exception as sink_exc:  # noqa: BLE001
+                print(f"Sink: could not record failure: {sink_exc}",
+                      file=sys.stderr, flush=True)
+        raise
+
+
+def _run(argv, from_raw, quiet, log, run_id) -> int:
 
     # ---- Phase 1: collect -------------------------------------------------
     if from_raw:
@@ -180,6 +229,12 @@ def main(argv=None) -> int:
 
     # Stamps description_status / enrichment_needed. No browser is launched.
     records = enrich.enrich(records)
+
+    # ALL deduped jobs go to Supabase, so the dashboard can explain every
+    # verdict (hard-rejected ones included, via job_scores.filter_status).
+    if run_id:
+        n_written = sink.write_jobs(records)
+        log(f"Sink: upserted {n_written} jobs")
 
     # ---- Phase 2: hard reject + keyword pre-filter ------------------------
     passed, all_filtered = apply_filters(records)
@@ -213,6 +268,9 @@ def main(argv=None) -> int:
     if isinstance(store, history.SqliteHistoryStore):
         existing = len(store.all_records())
         log(f"History: {backend} at {store.path} ({existing} known jobs)")
+    elif isinstance(store, history.SupabaseHistoryStore):
+        existing = len(store.all_records())
+        log(f"History: {backend} ({existing} known jobs)")
     else:
         log(f"History: {backend} -- NOT persistent; cross-run dedupe "
               f"inactive this run")
@@ -290,6 +348,18 @@ def main(argv=None) -> int:
         "selected": len(selected),
     }
     log(f"\nStats: {stats}")
+
+    # ---- Sink: scores for every job with a verdict, then close the run -----
+    if run_id:
+        # Ranked rows carry the full verdict; the rest only have the filter
+        # verdict. Ranked rows win when a job_id appears in both lists.
+        ranked_ids = {r.get("job_id") for r in ranked if r.get("job_id")}
+        scored = list(ranked) + [
+            r for r in all_filtered
+            if history.job_identity(r)["job_id"] not in ranked_ids]
+        n_scores = sink.write_scores(run_id, scored)
+        sink.finish_run(run_id, stats, status="ok")
+        log(f"Sink: wrote {n_scores} job_scores rows, run {run_id} ok")
     for row in top:
         log(f"  [{row.get('final_rank')}] {row.get('final_score'):>5} "
             f"(kw {row.get('keyword_score')}, sem {row.get('semantic_score')}) "
