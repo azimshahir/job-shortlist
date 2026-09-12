@@ -1,12 +1,15 @@
 name: Daily job shortlist
 
-# WHY THIS RUNS ON ACTIONS AND NOT IN THE CLAUDE CLOUD ROUTINE
-#   The Claude cloud sandbox's egress proxy returns 403 for linkedin.com and
-#   indeed.com, so it cannot scrape. GitHub runners can. So: Actions scrapes
-#   and commits shortlist.md + job_history.db back to main; the Claude routine
-#   then only reads shortlist.md from the repo and presents it.
+# WHY THIS RUNS ON ACTIONS AND NOT ON VERCEL OR IN THE CLAUDE CLOUD ROUTINE
+#   Vercel has no torch and a 10s limit; the Claude cloud sandbox's egress
+#   proxy returns 403 for linkedin.com and indeed.com. GitHub runners can
+#   scrape. So: Actions scrapes, writes runs / jobs / job_scores to Supabase
+#   (SINK=supabase) and reads cross-run history from the same tables
+#   (HISTORY_BACKEND=supabase). shortlist.md is still committed as the daily
+#   record for the /jobs chat command; job_history.db is no longer used.
 #
-#   The user never needs to open GitHub -- this is plumbing.
+#   The user never needs to open GitHub -- the dashboard's "Scrape sekarang"
+#   button fires workflow_dispatch on this file.
 
 on:
   schedule:
@@ -16,7 +19,14 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # needed to push shortlist.md and job_history.db
+  contents: write   # needed to push shortlist.md
+
+env:
+  SINK: supabase
+  HISTORY_BACKEND: supabase
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  SUPABASE_USER_ID: ${{ secrets.SUPABASE_USER_ID }}
 
 jobs:
   scrape:
@@ -59,20 +69,23 @@ jobs:
           python test_pipeline.py
           python test_careers.py
           python test_history.py
+          python test_sink.py
 
       - name: Run pipeline
-        run: python pipeline.py --quiet
+        # SINK / HISTORY_BACKEND come from the job env above. sink.py fails
+        # loudly before scraping if any SUPABASE_* secret is missing.
+        run: python pipeline.py --quiet --sink supabase
 
       - name: Show report in job summary
         if: always()
         run: cat shortlist.md >> "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Commit report and history back to main
+      - name: Commit report back to main
         if: always()
         run: |
           git config user.name  "job-shortlist-bot"
           git config user.email "bot@job-shortlist"
-          git add shortlist.md job_history.db
+          git add shortlist.md
           if git diff --cached --quiet; then
             echo "nothing to commit"
             exit 0

@@ -13,7 +13,10 @@ web/.env*.local
 .env
 .venv/
 .env
-# job_history.db IS committed on purpose: the cloud routine has no other
-# durable storage, so it commits the db back after each run. Small, no secrets.
+# History now lives in Supabase (HISTORY_BACKEND=supabase). The local SQLite
+# file is only for offline runs and is never committed.
+scraper/job_history.db
 scraper/job_history.db-journal
 scraper/job_history.db-wal
+# .env files are never committed (secrets live in Vercel + GitHub Secrets)
+.env.*

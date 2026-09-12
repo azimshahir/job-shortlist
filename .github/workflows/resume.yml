@@ -1,0 +1,67 @@
+name: Tailored resume (API path)
+
+# OPTIONAL path. Only useful when the user has set LLM_PROVIDER plus the
+# matching API key in GitHub Secrets and RESUME_MODE=api on Vercel.
+#
+# The DEFAULT path costs nothing: the dashboard sets
+# job_actions.resume_status='requested' and the user runs `/resume` in Claude
+# Code, which writes the tailored content itself and renders/uploads via
+# scraper/render_resume.py. See docs/backend.md.
+#
+# Both paths share the same guardrails (candidate.has_placeholders,
+# must_not_claim, framing rules, resume.build_resume).
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: "jobs.job_id to tailor a resume for"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  resume:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: resume-${{ inputs.job_id }}
+      cancel-in-progress: false
+
+    defaults:
+      run:
+        working-directory: scraper
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_USER_ID: ${{ secrets.SUPABASE_USER_ID }}
+      LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+      LLM_MODEL: ${{ secrets.LLM_MODEL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: scraper/requirements.txt
+
+      - name: Install dependencies
+        # No torch needed here: make_resume.py never embeds anything.
+        run: |
+          pip install python-docx==1.2.0 PyYAML==6.0.3 supabase==2.31.0 \
+            pandas==2.3.3 numpy==2.4.6
+          if [ "$LLM_PROVIDER" = "anthropic" ]; then pip install anthropic; fi
+          if [ "$LLM_PROVIDER" = "openai" ]; then pip install openai; fi
+
+      - name: Generate, upload, mark ready
+        # Refuses (and records resume_status='failed' with the reason) when
+        # candidate_profile.yaml still has TODO_ placeholders or no LLM is
+        # configured. Never invents candidate data.
+        run: python make_resume.py "${{ inputs.job_id }}"
