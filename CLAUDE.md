@@ -91,7 +91,8 @@ Scraper writes with the service-role key; web reads/writes as the signed-in user
 - `job_actions(job_id pk fk, user_id, status text default 'new', applied_date,
   notes, resume_status text default 'none', resume_url text, updated_at)`
   status ∈ new·shortlisted·applied·interview·offer·rejected·ignored
-  resume_status ∈ none·pending·ready·failed
+  resume_status ∈ none·requested·pending·ready·failed
+  (requested = queued for `/resume` in Claude Code; pending = optional API path)
 - `validation_labels(job_id pk fk, user_id, label text, labelled_at)`
   label ∈ strong·acceptable·weak·reject
 - Storage bucket `resumes` (private; signed URLs).
@@ -105,10 +106,20 @@ The scraper's `SupabaseHistoryStore` maps: `jobs` ↔ history record,
 
 | Where | Name | Purpose |
 |---|---|---|
-| GitHub Secrets | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | scraper writes |
-| GitHub Secrets | `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`, `LLM_PROVIDER` | resume only, optional |
+| GitHub Secrets | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_USER_ID` | scraper writes |
+| GitHub Secrets | `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`, `LLM_PROVIDER` | OPTIONAL, only if the user ever wants API-path resumes. Not planned. |
 | Vercel | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | web reads |
-| Vercel | `GITHUB_TOKEN` (fine-grained, actions:write on this repo), `GITHUB_REPO=azimshahir/job-shortlist` | scrape/resume buttons |
+| Vercel | `GITHUB_TOKEN` (fine-grained, actions:write on this repo), `GITHUB_REPO=azimshahir/job-shortlist` | Scrape sekarang button |
+| Vercel | `RESUME_MODE` | unset/`queue` (default) — Minta resume only marks `requested`; `api` dispatches resume.yml |
+
+## Tailored resume — how it actually works (no API key)
+
+The user pays for nothing extra. The dashboard button sets
+`job_actions.resume_status='requested'`. The user then runs `/resume` in Claude
+Code, which reads the queue, writes the tailored content itself (Claude
+subscription), renders via `scraper/render_resume.py` (all guardrails enforced
+there), uploads to Storage, marks `ready`. The dashboard button turns into
+Download. Blocked entirely while `candidate_profile.yaml` has `TODO_`s.
 
 ## Working conventions
 

@@ -13,12 +13,12 @@ resume guna langganan Claude sedia ada. Tiada API key.
 | Fasa | Apa | Siapa | Status |
 |---|---|---|---|
 | 0 | Pindah Python ke `scraper/` | Orchestrator | ✅ Siap 12 Sep |
-| 1 | Backend: Supabase schema, sink, workflows, API routes | Agent Backend | 🔄 Berjalan |
+| 1 | Backend: Supabase schema, sink, workflows, API routes | Agent Backend | ✅ Siap 12 Sep |
 | 2 | Designer: spec 4 skrin + mock | Agent Designer | ✅ Siap 12 Sep |
-| 3 | Frontend: Next.js — login, Hari Ini, Semua Job, Runs, Detail | Agent Frontend | ⏳ Lepas Fasa 1 |
+| 3 | Frontend: Next.js — login, Hari Ini, Semua Job, Runs, Detail | Agent Frontend | 🔄 Berjalan |
 | 4 | Butang Scrape sekarang + Minta resume | Backend + Frontend | ⏳ Lepas Fasa 3 |
-| 5 | `/resume` command (jana .docx guna langganan Claude) | Backend | ⏳ Lepas Fasa 1 |
-| 6 | Setup akaun (Supabase, Vercel, secrets) | **Azim** + Orchestrator | ⏳ Lepas Fasa 1 |
+| 5 | `/resume` command (jana .docx guna langganan Claude) | Backend | ✅ Siap (belum diuji — perlu CV) |
+| 6 | Setup akaun (Supabase, Vercel, secrets) | **Azim** + Orchestrator | 🟡 Boleh mula sekarang — `docs/backend.md` |
 | 7 | Deploy Vercel + smoke test | Orchestrator | ⏳ Lepas 3, 4, 6 |
 | 8 | Validasi seminggu, tune rules | Azim + Orchestrator | ⏳ Lepas 7 |
 
@@ -31,20 +31,20 @@ resume guna langganan Claude sedia ada. Tiada API key.
 - [x] Workflow, `.gitignore`, `/jobs` ikut path baru
 - [x] `docs/PRD.md` v1.1, `CLAUDE.md`
 
-## Fasa 1 — Backend 🔄
+## Fasa 1 — Backend ✅
 
-- [ ] `supabase/migrations/0001_init.sql` — 5 table + RLS + bucket `resumes`
-- [ ] `scraper/sink.py` — tulis runs / jobs / job_scores
-- [ ] `scraper/history.py` — `SupabaseHistoryStore`
-- [ ] `scraper/pipeline.py --sink supabase`
-- [ ] `scraper/resume_queue.py` + `render_resume.py`
-- [ ] `scraper/test_sink.py` — ujian tanpa network
-- [ ] `.github/workflows/daily.yml` tulis ke Supabase
-- [ ] `web/lib/supabase/{server,client,types}.ts`
-- [ ] `web/lib/github.ts` + `web/app/api/{scrape,resume}/route.ts`
-- [ ] `.claude/commands/resume.md`
-- [ ] `docs/backend.md` — panduan setup untuk Azim (Bahasa Melayu)
-- [ ] `scraper/migrate_sqlite.py` — pindah history lama sekali
+- [x] `supabase/migrations/0001_init.sql` — 5 table + RLS + bucket `resumes`
+- [x] `scraper/sink.py` — tulis runs / jobs / job_scores
+- [x] `scraper/history.py` — `SupabaseHistoryStore`
+- [x] `scraper/pipeline.py --sink supabase`
+- [x] `scraper/resume_queue.py` + `render_resume.py`
+- [x] `scraper/test_sink.py` — ujian tanpa network
+- [x] `.github/workflows/daily.yml` tulis ke Supabase
+- [x] `web/lib/supabase/{server,client,types}.ts`
+- [x] `web/lib/github.ts` + `web/app/api/{scrape,resume}/route.ts`
+- [x] `.claude/commands/resume.md`
+- [x] `docs/backend.md` — panduan setup untuk Azim (Bahasa Melayu)
+- [x] `scraper/migrate_sqlite.py` — pindah history lama sekali
 
 ## Fasa 2 — Designer ✅
 
@@ -53,7 +53,7 @@ resume guna langganan Claude sedia ada. Tiada API key.
 - [x] `docs/mock-hari-ini.html` — mock visual skrin utama
 - [ ] Nota untuk Frontend: butang resume ikut aliran queue (Minta → Dalam senarai → Download); prasyarat hanya CV, bukan API key
 
-## Fasa 3 — Frontend ⏳
+## Fasa 3 — Frontend 🔄
 
 - [ ] Login (Supabase Auth, email + password)
 - [ ] App shell: nav Hari Ini / Semua Job / Runs, logout
@@ -133,3 +133,4 @@ resume guna langganan Claude sedia ada. Tiada API key.
 
 - **11 Sep** — Scraper siap, 952 job, semantic + career gating + history. Email dibuang. Cloud routine gagal (403).
 - **12 Sep** — Pivot ke dashboard. PRD v1.1, CLAUDE.md, Fasa 0 siap. Backend + Designer dilancarkan.
+- **13 Sep** — Backend + Designer siap (112 ujian). Frontend dilancarkan. Azim boleh mula Fasa 6.
