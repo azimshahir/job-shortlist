@@ -204,6 +204,20 @@ export type JobActionInsert = Optional<
 >;
 export type ValidationLabelInsert = Optional<ValidationLabelRow, "labelled_at">;
 
+// ---- views (supabase/migrations/0002_views.sql) ----------------------------
+/** jobs ⟕ latest job_scores ⟕ job_actions ⟕ validation_labels, one row/job. */
+export type LatestJobScoreRow = Omit<JobRow, "content_key" | "url_key"> &
+  Omit<JobScoreRow, "run_id" | "job_id" | "user_id" | "matched_keywords"> & {
+    run_id: string | null;
+    matched_keywords: string[];
+    status: JobStatus;
+    applied_date: string | null;
+    notes: string | null;
+    resume_status: ResumeStatus;
+    resume_url: string | null;
+    label: ValidationLabel | null;
+  };
+
 // ---- supabase-js Database shape ------------------------------------------
 export type Database = {
   public: {
@@ -270,7 +284,12 @@ export type Database = {
         ];
       };
     };
-    Views: { [_ in never]: never };
+    Views: {
+      latest_job_scores: {
+        Row: LatestJobScoreRow;
+        Relationships: [];
+      };
+    };
     Functions: { [_ in never]: never };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
