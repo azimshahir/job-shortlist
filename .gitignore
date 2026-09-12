@@ -1,14 +1,19 @@
 __pycache__/
 *.pyc
-raw_jobs.csv
-filtered_jobs.csv
-ranked_jobs.csv
-final_jobs.csv
+scraper/raw_jobs.csv
+scraper/filtered_jobs.csv
+scraper/ranked_jobs.csv
+scraper/final_jobs.csv
 # shortlist.md is committed by the routine as the daily record
-resumes/
+scraper/resumes/
+# web
+web/node_modules/
+web/.next/
+web/.env*.local
+.env
 .venv/
 .env
 # job_history.db IS committed on purpose: the cloud routine has no other
 # durable storage, so it commits the db back after each run. Small, no secrets.
-job_history.db-journal
-job_history.db-wal
+scraper/job_history.db-journal
+scraper/job_history.db-wal

@@ -26,6 +26,10 @@ jobs:
       group: daily-shortlist
       cancel-in-progress: false
 
+    defaults:
+      run:
+        working-directory: scraper
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,12 +39,13 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+          cache-dependency-path: scraper/requirements.txt
 
       - name: Cache Hugging Face model
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: hf-${{ hashFiles('config.py') }}
+          key: hf-${{ hashFiles('scraper/config.py') }}
           restore-keys: hf-
 
       - name: Install dependencies
@@ -83,10 +88,10 @@ jobs:
         with:
           name: stages-${{ github.run_number }}
           path: |
-            raw_jobs.csv
-            filtered_jobs.csv
-            ranked_jobs.csv
-            final_jobs.csv
-            shortlist.md
+            scraper/raw_jobs.csv
+            scraper/filtered_jobs.csv
+            scraper/ranked_jobs.csv
+            scraper/final_jobs.csv
+            scraper/shortlist.md
           if-no-files-found: warn
           retention-days: 14
