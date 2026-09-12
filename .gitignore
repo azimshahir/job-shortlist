@@ -20,3 +20,4 @@ scraper/job_history.db-journal
 scraper/job_history.db-wal
 # .env files are never committed (secrets live in Vercel + GitHub Secrets)
 .env.*
+!.env.example
